@@ -38,13 +38,25 @@ input[type="select"] {
     }
 }
 
-.fullWidth {
+.full-width {
     width: 100% !important;
 }
 
-.fontAwesome {
+.font-awesome {
     font-family: FontAwesome, "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: inherit;
     /*line-height: inherit;*/
     line-height: 34px;
+}
+
+.top-buffer {
+    margin-top: 10px;
+}
+
+.ajax-loader {
+    margin-top: 20%;
+}
+
+.scrollbars {
+    overflow: auto;
 }

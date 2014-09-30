@@ -27,7 +27,7 @@ namespace ExcelImporter.Controllers
 
             HSSFWorkbook hssfwb;
             var fn = (await db.ImportedFiles.FirstOrDefaultAsync(it => it.Id == id && it.User == Thread.CurrentPrincipal.Identity.Name.ToLower())).Path;
-            using (var fs = new FileStream(fn, FileMode.Open))
+            using (var fs = new FileStream(fn, FileMode.Open, FileAccess.Read, FileShare.None, bufferSize: 4096, useAsync: true))
             {
                 hssfwb = new HSSFWorkbook(fs);
             }
@@ -44,7 +44,7 @@ namespace ExcelImporter.Controllers
             for (int i = 1; i <= sheet.LastRowNum; i++)
             {
                 var row = sheet.GetRow(i);
-                var newObjects = new List<object>();
+                var objectsInRow = new List<object>();
                 for (int col = 0; col < row.PhysicalNumberOfCells; col++)
                 {
                     if (!headers.ContainsKey(col))
@@ -55,11 +55,11 @@ namespace ExcelImporter.Controllers
                         continue;
 
                     var type = Type.GetType(cm.Table);
-                    var newObj = newObjects.FirstOrDefault(it => it.GetType() == type);
+                    var newObj = objectsInRow.FirstOrDefault(it => it.GetType() == type);
                     if (newObj == null)
                     {
                         newObj = Activator.CreateInstance(type);
-                        newObjects.Add(newObj);
+                        objectsInRow.Add(newObj);
                     }
                     var prop = newObj.GetType().GetProperty(cm.Column);
                     try
@@ -73,27 +73,32 @@ namespace ExcelImporter.Controllers
                     }
                     catch { }
                 }
-                foreach (var obj in newObjects)
+                foreach (var obj in objectsInRow)
                 {
                     ImportHelper.RepairObject(obj);
                 }
-                ImportHelper.SetRelations(newObjects);
 
-                foreach (var obj in newObjects)
+                var handledObjects = new List<object>();
+
+                foreach (var obj in objectsInRow)
                 {
                     var dbSet = db.Set(obj.GetType());
                     var keyValues = ImportHelper.GetKeyValues(obj);
-                    var foundObj = dbSet.Find(keyValues);
+                    var foundObj = await dbSet.FindAsync(keyValues);
                     if (foundObj == null)
                     {
                         dbSet.Add(obj);
+                        handledObjects.Add(obj);
                     }
                     else
                     {
                         var copiedProperties = columnMappings.Where(it => headers.Values.Contains(it.Header)).Select(it => it.Column);
                         ImportHelper.CopyProperties(obj, foundObj, copiedProperties);
+                        handledObjects.Add(foundObj);
                     }
                 }
+
+                await ImportHelper.SetRelations(db, handledObjects);
             }
 
             foreach (var table in columnMappings.Select(it => it.Table).Distinct())
@@ -108,7 +113,6 @@ namespace ExcelImporter.Controllers
                         columns.Add(prop.Name);
                     }
                 }
-                db.ChangeTracker.DetectChanges();
 
                 var changedObjects = db.Set(type).Local.OfType<object>();
 
@@ -169,7 +173,10 @@ namespace ExcelImporter.Controllers
                 {
                     await db.SaveChangesAsync();
                 }
-                catch { }
+                catch (Exception e)
+                {
+                    return InternalServerError(e);
+                }
             }
 
             return Ok(ret);
@@ -194,5 +201,13 @@ namespace ExcelImporter.Controllers
             return Ok(item);
         }
 
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
+            }
+            base.Dispose(disposing);
+        }
     }
 }

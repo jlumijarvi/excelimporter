@@ -8,11 +8,14 @@ importExcelController = function () {
     var fileId = null;
     var fileUpload = null;
     var alertPanel = null;
+    var errorDetails = null;
     var mappingPanel = null;
     var previewPanel = null;
-    var modalDialog = null;
+    var previewDialog = null;
 
     function clearAll() {
+        fileUpload.find('[type=file]').val('');
+        fileUpload.find('.form-control').val('');
         mappingPanel.fadeOut();
         previewPanel.fadeOut();
     };
@@ -30,11 +33,18 @@ importExcelController = function () {
             data: data ? JSON.stringify(data) : null
         }).error(function (jqXHR, textStatus, errorThrown) {
             clearAll();
-            alert('danger', 'Something went wrong. Status: ' + textStatus + '. Error: ' + errorThrown);
-        }).complete(function () {
+            var json = null;
+            try {
+                json = $.parseJSON(jqXHR.responseText);
+            }
+            catch (e) { }
+            var errorText = parseError(json);
+            errorDetails.find('.modal-body pre').append(errorText);
+            alert('danger', 'Something went wrong. Error: ' + errorThrown + '.', !_.isEmpty(errorText));
+        }).complete(function (jqXHR, textStatus) {
             $('#modal-progress').modal('hide');
             $(trigger).button('reset');
-        })
+        });
     };
 
     function populateColumnSelectionDropDown(el) {
@@ -55,8 +65,27 @@ importExcelController = function () {
         });
     };
 
-    function alert(status, text) {
-        alertPanel.removeAttr('class').addClass('alert alert-' + status + ' fade in').append(text).show();
+    function alert(status, text, details) {
+        alertPanel.removeAttr('class').addClass('alert alert-' + status + ' fade in top-buffer').append(text);
+        if (details) {
+            $(alertPanel).append(' ').append($('<a>').attr('href', '#').addClass('alert-link').text('Details'));
+            $(alertPanel).find('a').click(function () {
+                $(errorDetails).modal('show');
+            });
+        }
+        alertPanel.show();
+    }
+
+    function parseError(jsonObj) {
+        if (_.isUndefined(jsonObj))
+            return '';
+
+        var ret = '';
+        for (key in jsonObj) {
+            ret += key + ': ' + jsonObj[key] + '\n';
+        }
+
+        return ret;
     }
 
     return {
@@ -71,9 +100,10 @@ importExcelController = function () {
             fileId = $(importExcelPage).find('[id$=FileId]').val();
             fileUpload = $(importExcelPage).find('.file-upload');
             alertPanel = $(importExcelPage).find('#alertPane')
+            errorDetails = $(importExcelPage).find('#errorDetails');
             mappingPanel = $(importExcelPage).find('[id$=MappingPanel]');
             previewPanel = $(importExcelPage).find('#previewPanel');
-            modalDialog = $(importExcelPage).find('.modal-dialog');
+            previewDialog = $(importExcelPage).find('#previewItems .modal-dialog');
 
             if (_.isEmpty(fileId)) {
                 clearAll();
@@ -90,7 +120,6 @@ importExcelController = function () {
             fileUpload.find('[type=file]').change(function () {
                 var self = $(this);
                 if (_.isEmpty(self.val())) {
-                    self.siblings('.form-control').val('');
                     clearAll();
                     return;
                 }
@@ -100,11 +129,11 @@ importExcelController = function () {
                 fileUpload.find('[id$=UploadButton]').click();
             });
 
-            modalDialog.parent().on('hide.bs.modal', function () {
+            previewDialog.parent().on('hide.bs.modal', function () {
                 $(this).find('.modal-body').scrollTop(0);
             });
 
-            $(importExcelPage).find('[name$=myDropDownListTables]').change(function () {
+            mappingPanel.find('[name$=myDropDownListTables]').change(function () {
                 populateColumnSelectionDropDown($(this));
             });
 
@@ -190,12 +219,12 @@ importExcelController = function () {
                     }
                     else {
                         fileUpload.find('[type=file]').val('').change();
-                        alertPanel.removeAttr('class').addClass('alert alert-success fade in').append('Data imported succesfully.').show();
+                        alert('success', 'Data imported succesfully.');
                     }
                 });
             });
 
-            $(importExcelPage).find('#confirmIgnoreChanges').popover({
+            previewPanel.find('#confirmIgnoreChanges').popover({
                 content: function () {
                     return $($(this).data('popover-content')).html();
                 }
@@ -204,10 +233,7 @@ importExcelController = function () {
                     var uri = decodeURI('/api/import/' + fileId);
                     ajaxHelper(uri, 'DELETE', null, $(this)).success(function () {
                         fileUpload.find('[type=file]').val('').change();
-                        alertPanel.removeAttr('class').addClass('alert alert-info fade in').append('Import cancelled.').show();
-                    }).fail(function (data) {
-                        fileUpload.find('[type=file]').val('').change();
-                        alertPanel.removeAttr('class').addClass('alert alert-info fade in').append('Import cancelled.').show();
+                        alert('info', 'Import cancelled.');
                     });
                 });
             });

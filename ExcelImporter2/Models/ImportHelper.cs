@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Data.Entity;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 
 namespace ExcelImporter.Models
@@ -31,13 +33,12 @@ namespace ExcelImporter.Models
                     {
                         val = (prop.PropertyType == typeof(string) ? "-" : Activator.CreateInstance(prop.PropertyType));
                         prop.SetValue(obj, val);
-
                     }
                 }
             }
         }
 
-        internal static void SetRelations(IEnumerable<object> newObjects)
+        internal static async Task SetRelations(DbContext context, IEnumerable<object> newObjects)
         {
             foreach (var obj in newObjects)
             {
@@ -47,6 +48,11 @@ namespace ExcelImporter.Models
                     var reference = newObjects.FirstOrDefault(it => it != obj && it.GetType() == type);
                     var oldReference = prop.GetValue(obj);
                     prop.SetValue(obj, reference);
+                    //if (reference != null)
+                    //{
+                    //    var entry = context.Entry(obj);
+                    //    await entry.Reference(prop.Name).LoadAsync();
+                    //}
                 }
             }
         }
