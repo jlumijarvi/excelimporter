@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Express 2013 for Web
 VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelImporter2", "ExcelImporter2\ExcelImporter2.csproj", "{0BBA35A4-3B1A-437A-878A-AEB6A478B741}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelImporter", "ExcelImporter2\ExcelImporter.csproj", "{0BBA35A4-3B1A-437A-878A-AEB6A478B741}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelImporter2.Tests", "ExcelImporter2.Tests\ExcelImporter2.Tests.csproj", "{294214A5-629F-4AB8-8F9E-C32270E1F3D4}"
 EndProject

@@ -52,9 +52,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ExcelImporter2\ExcelImporter2.csproj">
+    <ProjectReference Include="..\ExcelImporter2\ExcelImporter.csproj">
       <Project>{0BBA35A4-3B1A-437A-878A-AEB6A478B741}</Project>
-      <Name>ExcelImporter2</Name>
+      <Name>ExcelImporter</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
