@@ -13,12 +13,12 @@ namespace ExcelImporter {
     public partial class ImportExcel {
         
         /// <summary>
-        /// importExcelCtrl control.
+        /// ImportExcelCtrl control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::ExcelImporter.UserControls.ExcelImporter importExcelCtrl;
+        protected global::ExcelImporter.UserControls.ExcelImporter ImportExcelCtrl;
     }
 }
