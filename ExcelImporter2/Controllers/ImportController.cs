@@ -1,21 +1,18 @@
-﻿using ExcelImporter.Models;
+﻿using ExcelImporter.Extensions;
+using ExcelImporter.Models;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using System.Data.Entity;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
-using System.Data.Entity;
-using System.Text.RegularExpressions;
-using System.Web;
-using System.ComponentModel;
-using ExcelImporter.Extensions;
-using System.ComponentModel.DataAnnotations;
 
 
 namespace ExcelImporter.Controllers
@@ -78,34 +75,23 @@ namespace ExcelImporter.Controllers
                 }
                 foreach (var obj in newObjects)
                 {
-                    db.Set(obj.GetType()).Add(obj);
+                    ImportHelper.RepairObject(obj);
                 }
-            }
+                ImportHelper.SetRelations(newObjects);
 
-            foreach (var item in db.ChangeTracker.Entries())
-            {
-                foreach (var prop in item.Entity.GetType().GetProperties())
+                foreach (var obj in newObjects)
                 {
-                    if (Attribute.IsDefined(prop, typeof(KeyAttribute)))
+                    var dbSet = db.Set(obj.GetType());
+                    var keyValues = ImportHelper.GetKeyValues(obj);
+                    var foundObj = dbSet.Find(keyValues);
+                    if (foundObj == null)
                     {
-                        var val = prop.GetValue(item.Entity);
-                        if (val == null)
-                        {
-                            if (prop.PropertyType == typeof(Guid))
-                                prop.SetValue(item.Entity, Guid.NewGuid());
-                            else if (prop.PropertyType == typeof(string))
-                                prop.SetValue(item.Entity, Guid.NewGuid().ToString("N").ToString());
-                        }
+                        dbSet.Add(obj);
                     }
-                    if (Attribute.IsDefined(prop, typeof(RequiredAttribute)))
+                    else
                     {
-                        var val = prop.GetValue(item.Entity);
-                        if (val == null || (val is string && ((string)val) == string.Empty))
-                        {
-                            val = (prop.PropertyType == typeof(string) ? "-" : Activator.CreateInstance(prop.PropertyType));
-                            prop.SetValue(item.Entity, val);
-                            
-                        }
+                        var copiedProperties = columnMappings.Where(it => headers.Values.Contains(it.Header)).Select(it => it.Column);
+                        ImportHelper.CopyProperties(obj, foundObj, copiedProperties);
                     }
                 }
             }
@@ -116,15 +102,18 @@ namespace ExcelImporter.Controllers
                 var columns = new List<string>();
                 foreach (var prop in type.GetProperties())
                 {
-                    if (Attribute.IsDefined(prop, typeof(KeyAttribute)) || columnMappings.Any(it => it.Table == table && it.Column == prop.Name))
+                    if (Attribute.IsDefined(prop, typeof(KeyAttribute)) ||
+                        columnMappings.Any(it => it.Table == table && it.Column == prop.Name))
                     {
                         columns.Add(prop.Name);
                     }
                 }
+                db.ChangeTracker.DetectChanges();
+
                 var changedObjects = db.Set(type).Local.OfType<object>();
-                
-                var addedObjects = changedObjects.Where(it => db.Entry(it).State == EntityState.Added);
-                var added = addedObjects.Count();
+
+                var addedObjects = changedObjects.Where(it => db.Entry(it).State == EntityState.Added).ToList();
+                var added = addedObjects.Count;
                 var addedItems = new List<string[]>();
                 foreach (var addedObj in addedObjects)
                 {
@@ -135,14 +124,31 @@ namespace ExcelImporter.Controllers
                 }
 
                 var modifiedObjects = changedObjects.Where(it => db.Entry(it).State == EntityState.Modified);
-                var modified = modifiedObjects.Count();
+                var modified = 0;
                 var modifiedItems = new List<string[]>();
+                var originalItems = new List<string[]>();
                 foreach (var modifiedObj in modifiedObjects)
                 {
                     var entry = db.Entry(modifiedObj);
+                    bool differ = false;
+                    foreach (var prop in entry.CurrentValues.PropertyNames)
+                    {
+                        if (!object.Equals(entry.CurrentValues[prop], entry.OriginalValues[prop]))
+                        {
+                            differ = true;
+                            break;
+                        }
+                    }
+                    if (!differ)
+                        continue;
+
                     var data = new List<string>();
                     columns.ForEach(it => data.Add((entry.CurrentValues[it] ?? string.Empty).ToString()));
                     modifiedItems.Add(data.ToArray());
+                    var origData = new List<string>();
+                    columns.ForEach(it => origData.Add((entry.OriginalValues[it] ?? string.Empty).ToString()));
+                    originalItems.Add(origData.ToArray());
+                    modified++;
                 }
 
                 ret.Add(new TableImportResult()
@@ -152,6 +158,7 @@ namespace ExcelImporter.Controllers
                     Added = addedItems,
                     ModifiedCount = modified,
                     Modified = modifiedItems,
+                    Original = originalItems,
                     Columns = columns
                 });
             }
@@ -179,14 +186,12 @@ namespace ExcelImporter.Controllers
                 if (File.Exists(item.Path))
                     File.Delete(item.Path);
             }
-            catch
-            {
-            }
+            catch { }
 
             db.ImportedFiles.Remove(item);
             await db.SaveChangesAsync();
 
-            return Ok();
+            return Ok(item);
         }
 
     }

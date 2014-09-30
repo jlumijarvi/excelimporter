@@ -13,5 +13,6 @@ namespace ExcelImporter.Models
         public IEnumerable<string[]> Added { get; set; }
         public int ModifiedCount { get; set; }
         public IEnumerable<string[]> Modified { get; set; }
+        public IEnumerable<string[]> Original { get; set; }
     }
 }

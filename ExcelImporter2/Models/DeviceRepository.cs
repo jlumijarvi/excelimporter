@@ -36,44 +36,51 @@ namespace ExcelImporter.Models
             if (!IsValidFile(postedFile))
                 return null;
 
-            using (var db = new RegistryContext())
+            try
             {
-                var uploadPath = HttpContext.Current.Server.MapPath("~/uploads");
-                var fileId = Guid.NewGuid().ToString("N").ToString();
-                if (!Directory.Exists(uploadPath))
-                    Directory.CreateDirectory(uploadPath);
-                var fn = Path.Combine(uploadPath, fileId);
-
-                using (var file = File.Create(fn))
+                using (var db = new RegistryContext())
                 {
-                    await postedFile.InputStream.CopyToAsync(file);
-                }
+                    var uploadPath = HttpContext.Current.Server.MapPath("~/uploads");
+                    var fileId = Guid.NewGuid().ToString("N").ToString();
+                    if (!Directory.Exists(uploadPath))
+                        Directory.CreateDirectory(uploadPath);
+                    var fn = Path.Combine(uploadPath, fileId);
 
-                // delete previous files for this user
-                var user = Thread.CurrentPrincipal.Identity.Name.ToLower();
-
-                foreach (var file in db.ImportedFiles.Where(it => it.User == user))
-                {
-                    try
+                    using (var file = File.Create(fn))
                     {
-                        File.Delete(file.Path);
+                        await postedFile.InputStream.CopyToAsync(file);
                     }
-                    catch { }
-                    db.ImportedFiles.Remove(file);
+
+                    // delete previous files for this user
+                    var user = Thread.CurrentPrincipal.Identity.Name.ToLower();
+
+                    foreach (var file in db.ImportedFiles.Where(it => it.User == user))
+                    {
+                        try
+                        {
+                            File.Delete(file.Path);
+                        }
+                        catch { }
+                        db.ImportedFiles.Remove(file);
+                    }
+
+                    db.ImportedFiles.Add(new ImportedFile()
+                    {
+                        Id = fileId,
+                        OriginalFileName = postedFile.FileName,
+                        Path = fn,
+                        User = Thread.CurrentPrincipal.Identity.Name.ToLower(),
+                        Created = DateTime.Now
+                    });
+
+                    await db.SaveChangesAsync();
+
+                    return fileId;
                 }
-
-                db.ImportedFiles.Add(new ImportedFile()
-                {
-                    Id = fileId,
-                    OriginalFileName = postedFile.FileName,
-                    Path = fn,
-                    User = Thread.CurrentPrincipal.Identity.Name.ToLower(),
-                    Created = DateTime.Now
-                });
-
-                await db.SaveChangesAsync();
-
-                return fileId;
+            }
+            catch
+            {
+                return null;
             }
         }
 

@@ -10,6 +10,54 @@ importExcelController = function () {
     var alertPanel = null;
     var mappingPanel = null;
     var previewPanel = null;
+    var modalDialog = null;
+
+    function clearAll() {
+        mappingPanel.fadeOut();
+        previewPanel.fadeOut();
+    };
+
+    function ajaxHelper(uri, method, data, trigger) {
+        if ($(trigger).hasClass('btn')) {
+            $(trigger).button('loading');
+        }
+        $('#modal-progress').modal('show');
+        return $.ajax({
+            type: method,
+            url: uri,
+            dataType: 'json',
+            contentType: 'application/json',
+            data: data ? JSON.stringify(data) : null
+        }).error(function (jqXHR, textStatus, errorThrown) {
+            clearAll();
+            alert('danger', 'Something went wrong. Status: ' + textStatus + '. Error: ' + errorThrown);
+        }).complete(function () {
+            $('#modal-progress').modal('hide');
+            $(trigger).button('reset');
+        })
+    };
+
+    function populateColumnSelectionDropDown(el) {
+        if (_.isEmpty(el.val()))
+            return;
+        var ddlColumns = el.parent().parent().find('[name$=myDropDownListColumns]');
+        var uri = decodeURI('/api/columns/' + el.val());
+        $.getJSON(uri).done(function (data) {
+            ddlColumns.find('option').remove();
+            ddlColumns.append($('<option>').val('').html(''));
+            $.each(data, function (i, item) {
+                var html = item.name;
+                if (item.key) {
+                    html = '[key] ' + html;
+                }
+                ddlColumns.append($('<option>').val(item.name).html(html));
+            });
+        });
+    };
+
+    function alert(status, text) {
+        alertPanel.removeAttr('class').addClass('alert alert-' + status + ' fade in').append(text).show();
+    }
 
     return {
         init: function (page) {
@@ -24,9 +72,13 @@ importExcelController = function () {
             fileUpload = $(importExcelPage).find('.file-upload');
             alertPanel = $(importExcelPage).find('#alertPane')
             mappingPanel = $(importExcelPage).find('[id$=MappingPanel]');
-            previewPanel = $('#previewPanel');
+            previewPanel = $(importExcelPage).find('#previewPanel');
+            modalDialog = $(importExcelPage).find('.modal-dialog');
 
-            if ($(importExcelPage).find('[id$=SelectedFile]').val() !== '') {
+            if (_.isEmpty(fileId)) {
+                clearAll();
+            }
+            else {
                 mappingPanel.fadeIn();
                 $(document).scrollTop(mappingPanel.offset().top);
             }
@@ -44,32 +96,21 @@ importExcelController = function () {
                 }
                 self.siblings('.form-control').val(self.val().replace(/C:\\fakepath\\/i, ''));
                 $(importExcelPage).find('.selector').button('loading');
+                $('#modal-progress').modal('show');
                 fileUpload.find('[id$=UploadButton]').click();
             });
 
-            populateColumnSelectionDropDown = function (el) {
-                if (_.isEmpty(el.val()))
-                    return;
-                var ddlColumns = el.parent().parent().find('[name$=myDropDownListColumns]');
-                var uri = decodeURI('/api/columns/' + el.val());
-                $.getJSON(uri).done(function (data) {
-                    ddlColumns.find('option').remove();
-                    ddlColumns.append($('<option>').val('').html(''));
-                    $.each(data, function (i, item) {
-                        var html = item.name;
-                        if (item.key) {
-                            html = '[key] ' + html;
-                        }
-                        ddlColumns.append($('<option>').val(item.name).html(html));
-                    });
-                });
-            };
+            modalDialog.parent().on('hide.bs.modal', function () {
+                $(this).find('.modal-body').scrollTop(0);
+            });
 
             $(importExcelPage).find('[name$=myDropDownListTables]').change(function () {
                 populateColumnSelectionDropDown($(this));
             });
 
             $(importExcelPage).find('#startPreviewButton, #commitChanges').click(function () {
+                var self = $(this);
+
                 var isPreview = (this.id === 'startPreviewButton');
                 var uri = decodeURI('/api/import/' + fileId + (isPreview ? '?preview=true' : ''));
                 var postData = [];
@@ -87,7 +128,7 @@ importExcelController = function () {
                     postData.push(newItem);
                 });
 
-                ajaxHelper(uri, 'POST', postData).success(function (data) {
+                ajaxHelper(uri, 'POST', postData, self).success(function (data) {
                     previewData = data;
                     if (isPreview) {
                         var previewChanges = $(importExcelPage).find('#previewChanges');
@@ -117,7 +158,7 @@ importExcelController = function () {
                             var objects = [];
                             if (self.data('table-type') === 'added') {
                                 objects = tablePreviewData.added;
-                            } else if (myTableType === 'modified') {
+                            } else if (self.data('table-type') === 'modified') {
                                 objects = tablePreviewData.modified;
                             }
 
@@ -161,30 +202,15 @@ importExcelController = function () {
             }).on('shown.bs.popover', function () {
                 $(importExcelPage).find('button[id=ignoreChanges]').click(function () {
                     var uri = decodeURI('/api/import/' + fileId);
-                    ajaxHelper(uri, 'DELETE').success(function () {
+                    ajaxHelper(uri, 'DELETE', null, $(this)).success(function () {
                         fileUpload.find('[type=file]').val('').change();
-                        alertPanel.removeAttr('class').addClass('alert alert-info fade in').append('All changes ignored.').show();
+                        alertPanel.removeAttr('class').addClass('alert alert-info fade in').append('Import cancelled.').show();
                     }).fail(function (data) {
                         fileUpload.find('[type=file]').val('').change();
-                        alertPanel.removeAttr('class').addClass('alert alert-info fade in').append('All changes ignored.').show();
+                        alertPanel.removeAttr('class').addClass('alert alert-info fade in').append('Import cancelled.').show();
                     });
                 });
             });
-
-            clearAll = function () {
-                mappingPanel.fadeOut();
-                previewPanel.fadeOut();
-            };
-
-            function ajaxHelper(uri, method, data) {
-                return $.ajax({
-                    type: method,
-                    url: uri,
-                    dataType: 'json',
-                    contentType: 'application/json',
-                    data: data ? JSON.stringify(data) : null
-                });
-            };
         }
-    }
+    };
 }();

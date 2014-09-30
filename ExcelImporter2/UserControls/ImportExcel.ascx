@@ -1,9 +1,15 @@
 ﻿<%@ Control Language="C#" AutoEventWireup="true" CodeBehind="ImportExcel.ascx.cs" Inherits="ExcelImporter.UserControls.ExcelImporter" EnableViewState="false" %>
 
 <link href="../Content/bootstrap.min.css" rel="stylesheet" />
+<link href="../Content/font-awesome.min.css" rel="stylesheet" />
 <div id="importExcel">
     <div id="alertPane" style="margin-top: 10px; display: none">
         <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+    </div>
+    <div id="modal-progress" class="modal fade modal-progress" data-backdrop="static" data-keyboard="false">
+        <div class="text-center" style="margin-top:20%">
+            <i class="fa fa-spinner fa-3x fa-spin"></i>
+        </div>
     </div>
     <div class="page-header">
         <h2>Import data</h2>
@@ -63,7 +69,7 @@
                 </asp:TemplateField>
             </Columns>
         </asp:GridView>
-        <button id="startPreviewButton" type="button" class="btn btn-primary">Preview</button>
+        <button id="startPreviewButton" type="button" class="btn btn-primary" data-loading-text="Processing...">Preview</button>
     </asp:Panel>
     <div id="previewPanel" style="display: none">
         <h3>Step 3. Review and save or ignore changes</h3>
@@ -72,7 +78,7 @@
         </div>
         <div id="previewChanges">
         </div>
-        <button id="commitChanges" type="button" class="btn btn-primary">Save</button>
+        <button id="commitChanges" type="button" class="btn btn-primary" data-loading-text="Saving...">Save</button>
         <button id="confirmIgnoreChanges" type="button" data-toggle="popover" data-html="true" data-title="Are you sure?" data-popover-content="#ignoreChangesPopover" data-trigger="focus" class="btn btn-default">Ignore</button>
         <div id="ignoreChangesPopover" style="display: none">
             <button id="ignoreChanges" type="button" data-dismiss="popover" class="btn btn-danger">Yes</button>

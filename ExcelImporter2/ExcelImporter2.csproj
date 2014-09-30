@@ -11,13 +11,13 @@
     <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{fae04ec0-301f-11d3-bf4b-00c04f79efbc}</ProjectTypeGuids>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ExcelImporter2</RootNamespace>
-    <AssemblyName>ExcelImporter2</AssemblyName>
+    <RootNamespace>ExcelImporter</RootNamespace>
+    <AssemblyName>ExcelImporter</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <UseIISExpress>true</UseIISExpress>
     <IISExpressSSLPort />
-    <IISExpressAnonymousAuthentication />
-    <IISExpressWindowsAuthentication />
+    <IISExpressAnonymousAuthentication>enabled</IISExpressAnonymousAuthentication>
+    <IISExpressWindowsAuthentication>disabled</IISExpressWindowsAuthentication>
     <IISExpressUseClassicPipelineMode />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -430,13 +430,9 @@
     <Compile Include="ImportExcel.aspx.designer.cs">
       <DependentUpon>ImportExcel.aspx</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\201409272008168_Initial.cs" />
-    <Compile Include="Migrations\201409272008168_Initial.Designer.cs">
-      <DependentUpon>201409272008168_Initial.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201409272011182_Initial1.cs" />
-    <Compile Include="Migrations\201409272011182_Initial1.Designer.cs">
-      <DependentUpon>201409272011182_Initial1.cs</DependentUpon>
+    <Compile Include="Migrations\201409292326082_initial.cs" />
+    <Compile Include="Migrations\201409292326082_initial.Designer.cs">
+      <DependentUpon>201409292326082_initial.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Column.cs" />
@@ -447,6 +443,7 @@
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\ImportedFile.cs" />
     <Compile Include="Models\ImportedTable.cs" />
+    <Compile Include="Models\ImportHelper.cs" />
     <Compile Include="Models\ImportResult.cs" />
     <Compile Include="Models\Person.cs" />
     <Compile Include="Models\RegistryContext.cs" />
@@ -486,11 +483,8 @@
     <Folder Include="App_Data\" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\201409272008168_Initial.resx">
-      <DependentUpon>201409272008168_Initial.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201409272011182_Initial1.resx">
-      <DependentUpon>201409272011182_Initial1.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\201409292326082_initial.resx">
+      <DependentUpon>201409292326082_initial.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>
