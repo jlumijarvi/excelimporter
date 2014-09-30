@@ -74,7 +74,7 @@ importExcelController = function () {
             });
         }
         alertPanel.show();
-    }
+    };
 
     function parseError(jsonObj) {
         if (_.isUndefined(jsonObj))
@@ -86,7 +86,7 @@ importExcelController = function () {
         }
 
         return ret;
-    }
+    };
 
     return {
         init: function (page) {

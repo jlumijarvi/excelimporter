@@ -38,7 +38,7 @@ namespace ExcelImporter.Models
             }
         }
 
-        internal static async Task SetRelations(DbContext context, IEnumerable<object> newObjects)
+        internal static void SetRelations(DbContext context, IEnumerable<object> newObjects)
         {
             foreach (var obj in newObjects)
             {
@@ -48,11 +48,7 @@ namespace ExcelImporter.Models
                     var reference = newObjects.FirstOrDefault(it => it != obj && it.GetType() == type);
                     var oldReference = prop.GetValue(obj);
                     prop.SetValue(obj, reference);
-                    //if (reference != null)
-                    //{
-                    //    var entry = context.Entry(obj);
-                    //    await entry.Reference(prop.Name).LoadAsync();
-                    //}
+
                 }
             }
         }

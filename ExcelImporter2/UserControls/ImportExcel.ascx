@@ -1,8 +1,5 @@
 ﻿<%@ Control Language="C#" AutoEventWireup="true" CodeBehind="ImportExcel.ascx.cs" Inherits="ExcelImporter.UserControls.ExcelImporter" EnableViewState="false" %>
 
-<link href="../Content/bootstrap.min.css" rel="stylesheet" />
-<link href="../Content/font-awesome.min.css" rel="stylesheet" />
-<link href="../Content/Site.css" rel="stylesheet" />
 <div id="importExcel">
     <div id="modal-progress" class="modal fade modal-progress" data-backdrop="static" data-keyboard="false">
         <div class="text-center ajax-loader">

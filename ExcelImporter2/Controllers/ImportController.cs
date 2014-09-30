@@ -82,12 +82,10 @@ namespace ExcelImporter.Controllers
 
                 foreach (var obj in objectsInRow)
                 {
-                    var dbSet = db.Set(obj.GetType());
-                    var keyValues = ImportHelper.GetKeyValues(obj);
-                    var foundObj = await dbSet.FindAsync(keyValues);
+                    var foundObj = await db.FindObject(obj);
                     if (foundObj == null)
                     {
-                        dbSet.Add(obj);
+                        db.Set(obj.GetType()).Add(obj);
                         handledObjects.Add(obj);
                     }
                     else
@@ -98,7 +96,7 @@ namespace ExcelImporter.Controllers
                     }
                 }
 
-                await ImportHelper.SetRelations(db, handledObjects);
+                ImportHelper.SetRelations(db, handledObjects);
             }
 
             foreach (var table in columnMappings.Select(it => it.Table).Distinct())
