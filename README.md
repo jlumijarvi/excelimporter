@@ -1,4 +1,4 @@
 excelimporter
 =============
 
-Excel database importer excercise implemented with ASP.NET Web Forms and jQuery.
+Excel database importer excercise implemented with jQuery, ASP.NET Web Forms, Web API and Entity Framework.
