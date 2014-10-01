@@ -49,6 +49,12 @@ namespace ExcelImporter.Models
                     var oldReference = prop.GetValue(obj);
                     prop.SetValue(obj, reference);
 
+                    if ((reference == null && oldReference != null)
+                        || (oldReference == null && reference != null)
+                        || !KeyValuesMatch(reference, oldReference))
+                    {
+                        context.Entry(obj).State = EntityState.Modified;
+                    }
                 }
             }
         }
@@ -73,6 +79,18 @@ namespace ExcelImporter.Models
                     prop.SetValue(target, prop.GetValue(source));
                 }
             }
+        }
+
+        internal static bool KeyValuesMatch(object obj1, object obj2)
+        {
+            foreach (var prop in obj1.GetType().GetProperties().Where(it => Attribute.IsDefined(it, typeof(KeyAttribute))))
+            {
+                var val1 = prop.GetValue(obj1);
+                var val2 = prop.GetValue(obj2);
+                if (!object.Equals(val1, val2))
+                    return false;
+            }
+            return true;
         }
     }
 }

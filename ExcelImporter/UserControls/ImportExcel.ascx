@@ -1,7 +1,7 @@
 ﻿<%@ Control Language="C#" AutoEventWireup="true" CodeBehind="ImportExcel.ascx.cs" Inherits="ExcelImporter.UserControls.ExcelImporter" EnableViewState="false" %>
 
 <div id="importExcel">
-    <div id="modal-progress" class="modal fade modal-progress" data-backdrop="static" data-keyboard="false">
+    <div id="modalProgress" class="modal fade modal-progress" data-backdrop="static" data-keyboard="false">
         <div class="text-center ajax-loader">
             <i class="fa fa-spinner fa-3x fa-spin"></i>
         </div>
@@ -9,7 +9,7 @@
     <div id="alertPane" style="display: none">
         <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
     </div>
-    <div id="errorDetails" class="modal fade">
+    <div id="alertDetails" class="modal fade">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -22,7 +22,6 @@
         </div>
     </div>
     <div class="page-header">
-        <span class="label label-info">[beta]</span>
         <h2>Import data</h2>
     </div>
     <h3>Step 1. Select file</h3>
@@ -31,7 +30,7 @@
         Note that a preview is shown before any data is saved.
     </div>
     <asp:HiddenField ID="FileId" runat="server" />
-    <div class="form file-upload" role="form" runat="server">
+    <div id="fileUpload" class="form file-upload" role="form">
         <asp:Panel ID="fileForm" CssClass="form-group form-inline" runat="server">
             <a href="#" class="btn btn-primary selector" data-loading-text="Loading...">Select File</a>
             <asp:TextBox ID="SelectedFile" CssClass="form-control full-width" ReadOnly="true" runat="server" />
@@ -114,7 +113,7 @@
     </div>
     <script>
         $(function () {
-            importExcelController.init($('#importExcel'));
+            importExcelController.init('#importExcel');
         });
     </script>
 </div>

@@ -1,6 +1,7 @@
 ﻿// import-excel-controller.js
 
 importExcelController = function () {
+    'use strict';
 
     var initialized = false;
     var previewData = null;
@@ -8,23 +9,25 @@ importExcelController = function () {
     var fileId = null;
     var fileUpload = null;
     var alertPanel = null;
-    var errorDetails = null;
+    var alertDetails = null;
     var mappingPanel = null;
     var previewPanel = null;
     var previewDialog = null;
+    var modalProgress = null;
 
     function clearAll() {
-        fileUpload.find('[type=file]').val('');
-        fileUpload.find('.form-control').val('');
+        $(importExcelPage).find('input').val('');
         mappingPanel.fadeOut();
         previewPanel.fadeOut();
-    };
+    }
 
     function ajaxHelper(uri, method, data, trigger) {
         if ($(trigger).hasClass('btn')) {
             $(trigger).button('loading');
         }
-        $('#modal-progress').modal('show');
+        var timeoutId = _.delay(function () {
+            modalProgress.modal('show');
+        }, 100);
         return $.ajax({
             type: method,
             url: uri,
@@ -38,55 +41,67 @@ importExcelController = function () {
                 json = $.parseJSON(jqXHR.responseText);
             }
             catch (e) { }
-            var errorText = parseError(json);
-            errorDetails.find('.modal-body pre').append(errorText);
+            var errorText = parseWebApiError(json);
+            if (!_.isEmpty(errorText)) {
+                alertDetails.find('.modal-body pre').append(errorText);
+            }
             alert('danger', 'Something went wrong. Error: ' + errorThrown + '.', !_.isEmpty(errorText));
         }).complete(function (jqXHR, textStatus) {
-            $('#modal-progress').modal('hide');
+            clearTimeout(timeoutId);
+            modalProgress.modal('hide');
             $(trigger).button('reset');
         });
-    };
+    }
 
     function populateColumnSelectionDropDown(el) {
-        if (_.isEmpty(el.val()))
-            return;
         var ddlColumns = el.parent().parent().find('[name$=myDropDownListColumns]');
-        var uri = decodeURI('/api/columns/' + el.val());
-        $.getJSON(uri).done(function (data) {
-            ddlColumns.find('option').remove();
-            ddlColumns.append($('<option>').val('').html(''));
-            $.each(data, function (i, item) {
-                var html = item.name;
-                if (item.key) {
-                    html = '[key] ' + html;
-                }
-                ddlColumns.append($('<option>').val(item.name).html(html));
+        ddlColumns.find('option').remove();
+        $('<option>').val('').html('').appendTo(ddlColumns); // empty selection
+
+        if (!_.isEmpty(el.val())) {
+            var uri = decodeURI('/api/columns/' + el.val());
+            ajaxHelper(uri, 'GET', null).success(function (data) {
+                $.each(data, function (i, item) {
+                    var html = item.name;
+                    if (item.key) {
+                        html = '[key] ' + html;
+                    }
+                    $('<option>').val(item.name).html(html).appendTo(ddlColumns);
+                });
             });
-        });
-    };
+        }
+    }
 
     function alert(status, text, details) {
         alertPanel.removeAttr('class').addClass('alert alert-' + status + ' fade in top-buffer').append(text);
         if (details) {
-            $(alertPanel).append(' ').append($('<a>').attr('href', '#').addClass('alert-link').text('Details'));
-            $(alertPanel).find('a').click(function () {
-                $(errorDetails).modal('show');
+            var detailsLink = $('<a>').attr('href', '#').addClass('alert-link').text('Details');
+            $(alertPanel).append(' ').append(detailsLink);
+            $(alertPanel).find('.alert-link').click(function () {
+                $(alertDetails).modal('show');
             });
         }
         alertPanel.show();
-    };
+    }
 
-    function parseError(jsonObj) {
-        if (_.isUndefined(jsonObj))
+    // parses a web api error object into text
+    function parseWebApiError(jsonObj) {
+        if (_.isUndefined(jsonObj)) {
             return '';
-
+        }
         var ret = '';
-        for (key in jsonObj) {
-            ret += key + ': ' + jsonObj[key] + '\n';
+        for (var key in jsonObj) {
+            var val = jsonObj[key];
+            if (_.isObject(val)) {
+                ret += parseWebApiError(val);
+            }
+            else {
+                ret += key + ': ' + val + '\n';
+            }
         }
 
         return ret;
-    };
+    }
 
     return {
         init: function (page) {
@@ -95,15 +110,16 @@ importExcelController = function () {
                 return;
             }
 
-            importExcelPage = page;
+            importExcelPage = $(page);
 
             fileId = $(importExcelPage).find('[id$=FileId]').val();
-            fileUpload = $(importExcelPage).find('.file-upload');
+            fileUpload = $(importExcelPage).find('#fileUpload');
             alertPanel = $(importExcelPage).find('#alertPane')
-            errorDetails = $(importExcelPage).find('#errorDetails');
+            alertDetails = $(importExcelPage).find('#alertDetails');
             mappingPanel = $(importExcelPage).find('[id$=MappingPanel]');
             previewPanel = $(importExcelPage).find('#previewPanel');
             previewDialog = $(importExcelPage).find('#previewItems .modal-dialog');
+            modalProgress = $(importExcelPage).find('#modalProgress');
 
             if (_.isEmpty(fileId)) {
                 clearAll();
@@ -124,9 +140,9 @@ importExcelController = function () {
                     return;
                 }
                 self.siblings('.form-control').val(self.val().replace(/C:\\fakepath\\/i, ''));
-                $(importExcelPage).find('.selector').button('loading');
-                $('#modal-progress').modal('show');
-                fileUpload.find('[id$=UploadButton]').click();
+                fileUpload.find('.selector').button('loading');
+                modalProgress.modal('show');
+                fileUpload.find('[id$=UploadButton]').click(); // post back triggered
             });
 
             previewDialog.parent().on('hide.bs.modal', function () {
@@ -166,10 +182,11 @@ importExcelController = function () {
                         $.each(data, function (i, item) {
                             var items = $('<li>').text('New items: ').
                                 append($('<a>').attr('href', '#').attr('data-toggle', 'modal').attr('data-target', '#previewItems').
-                                attr('data-table', item.name).attr('data-table-type', 'added').append($('<span>').addClass('badge').text(item.addedCount)));
-                            items.append($('<li>').text('Modified items: ').
+                                attr('data-table', item.name).attr('data-table-type', 'a').append($('<span>').addClass('badge').text(item.addedCount)));
+                            $('<li>').text('Modified items: ').
                                 append($('<a>').attr('href', '#').attr('data-toggle', 'modal').attr('data-target', '#previewItems').
-                                attr('data-table', item.name).attr('data-table-type', 'modified').append($('<span>').addClass('badge').text(item.modifiedCount))));
+                                attr('data-table', item.name).attr('data-table-type', 'm').append($('<span>').addClass('badge').text(item.modifiedCount))).
+                                appendTo(items);
                             previewChanges.append(item.name).append($('<ul>').append(items));
                         });
 
@@ -177,18 +194,20 @@ importExcelController = function () {
                             var self = $(this);
 
                             var previewItems = $(importExcelPage).find('#previewItems');
-                            var table = previewItems.find('table');
+                            var table = previewItems.find('.modal-body table');
                             table.html('');
                             var modalTitle = previewItems.find('.modal-title');
                             modalTitle.text('');
 
                             var tablePreviewData = _.where(previewData, { name: self.data('table') })[0];
                             var columns = tablePreviewData.columns;
-                            var objects = [];
-                            if (self.data('table-type') === 'added') {
-                                objects = tablePreviewData.added;
-                            } else if (self.data('table-type') === 'modified') {
-                                objects = tablePreviewData.modified;
+                            var currentData = [];
+                            var oldData = [];
+                            if (self.data('table-type') === 'a') {
+                                currentData = tablePreviewData.added;
+                            } else if (self.data('table-type') === 'm') {
+                                currentData = tablePreviewData.modified;
+                                oldData = tablePreviewData.original;
                             }
 
                             modalTitle.text(self.data('table'));
@@ -197,16 +216,17 @@ importExcelController = function () {
                             var headerRow = $('<tr>');
 
                             $.each(columns, function (i, column) {
-                                headerRow.append($('<th>').text(column));
+                                $('<th>').text(column).appendTo(headerRow);
                             });
                             header.append(headerRow);
                             table.append(header);
 
                             var body = $('<tbody>');
-                            $.each(objects, function (i, object) {
+                            $.each(currentData, function (i, object) {
                                 var newRow = $('<tr>');
                                 $.each(object, function (ii, value) {
-                                    newRow.append($('<td>').text(value));
+                                    var modified = _.isUndefined(oldData) ? false : oldData[i][ii] !== value;
+                                    $('<td>').text(value).addClass(modified ? 'bg-info' : '').appendTo(newRow);
                                 });
                                 body.append(newRow);
                             });

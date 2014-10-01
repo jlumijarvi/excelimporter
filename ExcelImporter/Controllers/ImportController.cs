@@ -132,17 +132,17 @@ namespace ExcelImporter.Controllers
                 foreach (var modifiedObj in modifiedObjects)
                 {
                     var entry = db.Entry(modifiedObj);
-                    bool differ = false;
-                    foreach (var prop in entry.CurrentValues.PropertyNames)
-                    {
-                        if (!object.Equals(entry.CurrentValues[prop], entry.OriginalValues[prop]))
-                        {
-                            differ = true;
-                            break;
-                        }
-                    }
-                    if (!differ)
-                        continue;
+                    //bool differ = false;
+                    //foreach (var prop in entry.CurrentValues.PropertyNames)
+                    //{
+                    //    if (!object.Equals(entry.CurrentValues[prop], entry.OriginalValues[prop]))
+                    //    {
+                    //        differ = true;
+                    //        break;
+                    //    }
+                    //}
+                    //if (!differ)
+                    //    continue;
 
                     var data = new List<string>();
                     columns.ForEach(it => data.Add((entry.CurrentValues[it] ?? string.Empty).ToString()));

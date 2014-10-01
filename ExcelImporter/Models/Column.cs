@@ -31,7 +31,7 @@ namespace ExcelImporter.Models
 
             var ret = new List<Column>();
 
-            foreach (var prop in type.GetProperties())
+            foreach (var prop in type.GetProperties().Where(it => !it.GetGetMethod().IsVirtual))
             {
                 ret.Add(new Column()
                 {
