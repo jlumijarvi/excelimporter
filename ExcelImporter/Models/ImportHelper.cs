@@ -49,9 +49,10 @@ namespace ExcelImporter.Models
                     var oldReference = prop.GetValue(obj);
                     prop.SetValue(obj, reference);
 
-                    if ((reference == null && oldReference != null)
+                    if (((reference == null && oldReference != null)
                         || (oldReference == null && reference != null)
                         || !KeyValuesMatch(reference, oldReference))
+                        && context.Entry(obj).State == EntityState.Unchanged)
                     {
                         context.Entry(obj).State = EntityState.Modified;
                     }

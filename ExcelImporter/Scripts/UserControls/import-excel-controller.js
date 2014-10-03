@@ -5,7 +5,7 @@ importExcelController = function () {
 
     var initialized = false;
     var previewData = null;
-    var importExcelPage = null;
+    var scope = null;
     var fileId = null;
     var fileUpload = null;
     var alertPanel = null;
@@ -16,7 +16,7 @@ importExcelController = function () {
     var modalProgress = null;
 
     function clearAll() {
-        $(importExcelPage).find('input').val('');
+        $(scope).find('input').val('');
         mappingPanel.fadeOut();
         previewPanel.fadeOut();
     }
@@ -110,16 +110,16 @@ importExcelController = function () {
                 return;
             }
 
-            importExcelPage = $(page);
+            scope = $(page);
 
-            fileId = $(importExcelPage).find('[id$=FileId]').val();
-            fileUpload = $(importExcelPage).find('#fileUpload');
-            alertPanel = $(importExcelPage).find('#alertPane')
-            alertDetails = $(importExcelPage).find('#alertDetails');
-            mappingPanel = $(importExcelPage).find('[id$=MappingPanel]');
-            previewPanel = $(importExcelPage).find('#previewPanel');
-            previewDialog = $(importExcelPage).find('#previewItems .modal-dialog');
-            modalProgress = $(importExcelPage).find('#modalProgress');
+            fileId = $(scope).find('[id$=FileId]').val();
+            fileUpload = $(scope).find('#fileUpload');
+            alertPanel = $(scope).find('#alertPane')
+            alertDetails = $(scope).find('#alertDetails');
+            mappingPanel = $(scope).find('[id$=MappingPanel]');
+            previewPanel = $(scope).find('#previewPanel');
+            previewDialog = $(scope).find('#previewItems .modal-dialog');
+            modalProgress = $(scope).find('#modalProgress');
 
             if (_.isEmpty(fileId)) {
                 clearAll();
@@ -153,13 +153,13 @@ importExcelController = function () {
                 populateColumnSelectionDropDown($(this));
             });
 
-            $(importExcelPage).find('#startPreviewButton, #commitChanges').click(function () {
+            $(scope).find('#startPreviewButton, #commitChanges').click(function () {
                 var self = $(this);
 
                 var isPreview = (this.id === 'startPreviewButton');
                 var uri = decodeURI('/api/import/' + fileId + (isPreview ? '?preview=true' : ''));
                 var postData = [];
-                $(importExcelPage).find('[name$=myDropDownListTables]').each(function () {
+                $(scope).find('[name$=myDropDownListTables]').each(function () {
                     var el = $(this);
                     if (_.isEmpty(el.val()))
                         return;
@@ -176,7 +176,7 @@ importExcelController = function () {
                 ajaxHelper(uri, 'POST', postData, self).success(function (data) {
                     previewData = data;
                     if (isPreview) {
-                        var previewChanges = $(importExcelPage).find('#previewChanges');
+                        var previewChanges = $(scope).find('#previewChanges');
 
                         previewChanges.html('');
                         $.each(data, function (i, item) {
@@ -193,7 +193,7 @@ importExcelController = function () {
                         previewChanges.find('a').click(function () {
                             var self = $(this);
 
-                            var previewItems = $(importExcelPage).find('#previewItems');
+                            var previewItems = $(scope).find('#previewItems');
                             var table = previewItems.find('.modal-body table');
                             table.html('');
                             var modalTitle = previewItems.find('.modal-title');
@@ -225,7 +225,7 @@ importExcelController = function () {
                             $.each(currentData, function (i, object) {
                                 var newRow = $('<tr>');
                                 $.each(object, function (ii, value) {
-                                    var modified = _.isUndefined(oldData) ? false : oldData[i][ii] !== value;
+                                    var modified = _.isEmpty(oldData) ? false : oldData[i][ii] !== value;
                                     $('<td>').text(value).addClass(modified ? 'bg-info' : '').appendTo(newRow);
                                 });
                                 body.append(newRow);
@@ -249,7 +249,7 @@ importExcelController = function () {
                     return $($(this).data('popover-content')).html();
                 }
             }).on('shown.bs.popover', function () {
-                $(importExcelPage).find('button[id=ignoreChanges]').click(function () {
+                $(scope).find('button[id=ignoreChanges]').click(function () {
                     var uri = decodeURI('/api/import/' + fileId);
                     ajaxHelper(uri, 'DELETE', null, $(this)).success(function () {
                         fileUpload.find('[type=file]').val('').change();

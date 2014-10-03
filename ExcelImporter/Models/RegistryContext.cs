@@ -30,31 +30,6 @@ namespace ExcelImporter.Models
 
         public System.Data.Entity.DbSet<ExcelImporter.Models.ImportedFile> ImportedFiles { get; set; }
 
-        public System.Data.Entity.DbSet FindSet(Type t)
-        {
-            var ret = default(System.Data.Entity.DbSet);
-
-            switch (t.ToString())
-            {
-                case "ExcelImporter.Models.Person":
-                    ret = People;
-                    break;
-                case "ExcelImporter.Models.Device":
-                    ret = Devices;
-                    break;
-                case "ExcelImporter.Models.ImportedTable":
-                    ret = ImportedTables;
-                    break;
-                case "ExcelImporter.Models.ImportedFile":
-                    ret = ImportedFiles;
-                    break;
-                default:
-                    break;
-            }
-
-            return ret;
-        }
-
         public async Task<object> FindObject(object obj)
         {
             var dbSet = this.Set(obj.GetType());
@@ -77,6 +52,26 @@ namespace ExcelImporter.Models
             }
 
             return foundObj;
+        }
+
+        public async Task VerifyChanges(object obj)
+        {
+            await Task.Run(() =>
+                {
+                    var changes = false;
+                    var entry = this.Entry(obj);
+                    foreach (var prop in entry.CurrentValues.PropertyNames)
+                    {
+                        if (!object.Equals(entry.CurrentValues[prop], entry.OriginalValues[prop]))
+                        {
+                            changes = true;
+                            break;
+                        }
+                    }
+
+                    if (!changes)
+                        entry.State = EntityState.Unchanged;
+                });
         }
     }
 }

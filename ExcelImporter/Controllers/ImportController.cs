@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity;
 using System.IO;
 using System.Linq;
@@ -78,7 +79,7 @@ namespace ExcelImporter.Controllers
                     ImportHelper.RepairObject(obj);
                 }
 
-                var handledObjects = new List<object>();
+                var changedObjects = new List<object>();
 
                 foreach (var obj in objectsInRow)
                 {
@@ -86,38 +87,34 @@ namespace ExcelImporter.Controllers
                     if (foundObj == null)
                     {
                         db.Set(obj.GetType()).Add(obj);
-                        handledObjects.Add(obj);
+                        changedObjects.Add(obj);
                     }
                     else
                     {
                         var copiedProperties = columnMappings.Where(it => headers.Values.Contains(it.Header)).Select(it => it.Column);
                         ImportHelper.CopyProperties(obj, foundObj, copiedProperties);
-                        handledObjects.Add(foundObj);
+                        changedObjects.Add(foundObj);
+                        await db.VerifyChanges(foundObj);
                     }
                 }
 
-                ImportHelper.SetRelations(db, handledObjects);
+                ImportHelper.SetRelations(db, changedObjects);
             }
 
-            foreach (var table in columnMappings.Select(it => it.Table).Distinct())
+            var tables = columnMappings.Select(it => it.Table).Distinct();
+            foreach (var table in tables)
             {
                 var type = Type.GetType(table);
-                var columns = new List<string>();
-                foreach (var prop in type.GetProperties())
-                {
-                    if (Attribute.IsDefined(prop, typeof(KeyAttribute)) ||
-                        columnMappings.Any(it => it.Table == table && it.Column == prop.Name))
-                    {
-                        columns.Add(prop.Name);
-                    }
-                }
+                var columns = (from prop in type.GetProperties()
+                               where Attribute.IsDefined(prop, typeof(KeyAttribute)) ||
+                                Attribute.IsDefined(prop, typeof(ForeignKeyAttribute)) ||
+                                columnMappings.Any(cm => cm.Table == table && cm.Column == prop.Name)
+                               select prop.Name).ToList();
 
-                var changedObjects = db.Set(type).Local.OfType<object>();
+                var localObjects = db.Set(type).Local.OfType<object>();
 
-                var addedObjects = changedObjects.Where(it => db.Entry(it).State == EntityState.Added).ToList();
-                var added = addedObjects.Count;
                 var addedItems = new List<string[]>();
-                foreach (var addedObj in addedObjects)
+                foreach (var addedObj in localObjects.Where(it => db.Entry(it).State == EntityState.Added))
                 {
                     var entry = db.Entry(addedObj);
                     var data = new List<string>();
@@ -125,40 +122,28 @@ namespace ExcelImporter.Controllers
                     addedItems.Add(data.ToArray());
                 }
 
-                var modifiedObjects = changedObjects.Where(it => db.Entry(it).State == EntityState.Modified);
-                var modified = 0;
-                var modifiedItems = new List<string[]>();
-                var originalItems = new List<string[]>();
-                foreach (var modifiedObj in modifiedObjects)
+                var modifiedItems = new List<List<string>>();
+                var originalItems = new List<List<string>>();
+                foreach (var modifiedObj in localObjects.Where(it => db.Entry(it).State == EntityState.Modified))
                 {
                     var entry = db.Entry(modifiedObj);
-                    //bool differ = false;
-                    //foreach (var prop in entry.CurrentValues.PropertyNames)
-                    //{
-                    //    if (!object.Equals(entry.CurrentValues[prop], entry.OriginalValues[prop]))
-                    //    {
-                    //        differ = true;
-                    //        break;
-                    //    }
-                    //}
-                    //if (!differ)
-                    //    continue;
-
-                    var data = new List<string>();
-                    columns.ForEach(it => data.Add((entry.CurrentValues[it] ?? string.Empty).ToString()));
-                    modifiedItems.Add(data.ToArray());
-                    var origData = new List<string>();
-                    columns.ForEach(it => origData.Add((entry.OriginalValues[it] ?? string.Empty).ToString()));
-                    originalItems.Add(origData.ToArray());
-                    modified++;
+                    modifiedItems.Add(new List<string>());
+                    var data = modifiedItems.Last();
+                    originalItems.Add(new List<string>());
+                    var origData = originalItems.Last();
+                    foreach (var col in columns)
+                    {
+                        data.Add((entry.CurrentValues[col] ?? string.Empty).ToString());
+                        origData.Add((entry.OriginalValues[col] ?? string.Empty).ToString());
+                    }
                 }
 
                 ret.Add(new TableImportResult()
                 {
                     Name = Regex.Replace(table, @".+\.", string.Empty),
-                    AddedCount = added,
+                    AddedCount = addedItems.Count,
                     Added = addedItems,
-                    ModifiedCount = modified,
+                    ModifiedCount = modifiedItems.Count,
                     Modified = modifiedItems,
                     Original = originalItems,
                     Columns = columns
@@ -167,14 +152,7 @@ namespace ExcelImporter.Controllers
 
             if (!preview)
             {
-                try
-                {
-                    await db.SaveChangesAsync();
-                }
-                catch (Exception e)
-                {
-                    return InternalServerError(e);
-                }
+                await db.SaveChangesAsync();
             }
 
             return Ok(ret);

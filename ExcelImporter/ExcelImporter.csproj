@@ -418,6 +418,7 @@
     <Compile Include="Default.aspx.designer.cs">
       <DependentUpon>Default.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Extensions\DbContextExtensions.cs" />
     <Compile Include="Extensions\GridViewExtensions.cs" />
     <Compile Include="Extensions\ICellExtensions.cs" />
     <Compile Include="Global.asax.cs">
