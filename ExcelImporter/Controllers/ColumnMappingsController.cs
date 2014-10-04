@@ -18,16 +18,16 @@ namespace ExcelImporter.Controllers
         private RegistryContext db = new RegistryContext();
 
         // GET: api/ColumnMappings
-        public IQueryable<ColumnMapping> GetColumnMappings()
+        public IQueryable<HeaderPropertyMapping> GetColumnMappings()
         {
-            return db.ColumnMappings;
+            return db.HeaderPropertyMapping;
         }
 
         // GET: api/ColumnMappings/5
-        [ResponseType(typeof(ColumnMapping))]
+        [ResponseType(typeof(HeaderPropertyMapping))]
         public async Task<IHttpActionResult> GetColumnMapping(int id)
         {
-            ColumnMapping columnMapping = await db.ColumnMappings.FindAsync(id);
+            HeaderPropertyMapping columnMapping = await db.HeaderPropertyMapping.FindAsync(id);
             if (columnMapping == null)
             {
                 return NotFound();
@@ -38,7 +38,7 @@ namespace ExcelImporter.Controllers
 
         // PUT: api/ColumnMappings/5
         [ResponseType(typeof(void))]
-        public async Task<IHttpActionResult> PutColumnMapping(int id, ColumnMapping columnMapping)
+        public async Task<IHttpActionResult> PutColumnMapping(int id, HeaderPropertyMapping columnMapping)
         {
             if (!ModelState.IsValid)
             {
@@ -72,31 +72,31 @@ namespace ExcelImporter.Controllers
         }
 
         // POST: api/ColumnMappings
-        [ResponseType(typeof(ColumnMapping))]
-        public async Task<IHttpActionResult> PostColumnMapping(ColumnMapping columnMapping)
+        [ResponseType(typeof(HeaderPropertyMapping))]
+        public async Task<IHttpActionResult> PostColumnMapping(HeaderPropertyMapping columnMapping)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            db.ColumnMappings.Add(columnMapping);
+            db.HeaderPropertyMapping.Add(columnMapping);
             await db.SaveChangesAsync();
 
             return CreatedAtRoute("DefaultApi", new { id = columnMapping.Id }, columnMapping);
         }
 
         // DELETE: api/ColumnMappings/5
-        [ResponseType(typeof(ColumnMapping))]
+        [ResponseType(typeof(HeaderPropertyMapping))]
         public async Task<IHttpActionResult> DeleteColumnMapping(int id)
         {
-            ColumnMapping columnMapping = await db.ColumnMappings.FindAsync(id);
+            HeaderPropertyMapping columnMapping = await db.HeaderPropertyMapping.FindAsync(id);
             if (columnMapping == null)
             {
                 return NotFound();
             }
 
-            db.ColumnMappings.Remove(columnMapping);
+            db.HeaderPropertyMapping.Remove(columnMapping);
             await db.SaveChangesAsync();
 
             return Ok(columnMapping);
@@ -113,7 +113,7 @@ namespace ExcelImporter.Controllers
 
         private bool ColumnMappingExists(int id)
         {
-            return db.ColumnMappings.Count(e => e.Id == id) > 0;
+            return db.HeaderPropertyMapping.Count(e => e.Id == id) > 0;
         }
     }
 }

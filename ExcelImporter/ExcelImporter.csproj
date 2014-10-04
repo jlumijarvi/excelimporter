@@ -438,15 +438,15 @@
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Column.cs" />
-    <Compile Include="Models\ColumnMapping.cs" />
-    <Compile Include="Models\ColumnResolver.cs" />
+    <Compile Include="Models\HeaderPropertyMapping.cs" />
+    <Compile Include="Models\PropertyResolver.cs" />
     <Compile Include="Models\Device.cs" />
     <Compile Include="Models\DeviceRepository.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\ImportedFile.cs" />
     <Compile Include="Models\ImportedTable.cs" />
     <Compile Include="Models\ImportHelper.cs" />
-    <Compile Include="Models\ImportResult.cs" />
+    <Compile Include="Models\TableImportResult.cs" />
     <Compile Include="Models\Person.cs" />
     <Compile Include="Models\RegistryContext.cs" />
     <Compile Include="Controllers\PeopleController.cs" />

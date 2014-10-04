@@ -113,7 +113,7 @@
     </div>
     <script>
         $(function () {
-            importExcelController.init('#importExcel');
+            ImportExcelController.init('#importExcel');
         });
     </script>
 </div>

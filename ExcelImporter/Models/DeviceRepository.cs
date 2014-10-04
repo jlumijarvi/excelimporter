@@ -92,7 +92,14 @@ namespace ExcelImporter.Models
                 HSSFWorkbook hssfwb;
                 using (var fs = new FileStream(file.Path, FileMode.Open))
                 {
-                    hssfwb = new HSSFWorkbook(fs);
+                    try
+                    {
+                        hssfwb = new HSSFWorkbook(fs);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new FormatException(id, e);
+                    }
                 }
 
                 ISheet sheet = hssfwb.GetSheetAt(0);
@@ -101,7 +108,7 @@ namespace ExcelImporter.Models
                 var tables = await this.GetImportedTables();
 
                 var headers = new List<object>();
-                var resolver = new ColumnResolver(tables.Select(it => Type.GetType(it.Type)));
+                var resolver = new PropertyResolver(tables.Select(it => Type.GetType(it.Type)));
                 for (int col = 0; col <= row.LastCellNum; col++)
                 {
                     var cell = row.GetCell(col);

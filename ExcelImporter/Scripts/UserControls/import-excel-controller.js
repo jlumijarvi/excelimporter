@@ -1,6 +1,6 @@
 ﻿// import-excel-controller.js
 
-importExcelController = function () {
+ImportExcelController = function () {
     'use strict';
 
     var initialized = false;
@@ -21,12 +21,12 @@ importExcelController = function () {
         previewPanel.fadeOut();
     }
 
-    function ajaxHelper(uri, method, data, trigger) {
+    function ajaxHelper(uri, method, data, trigger, progress) {
         if ($(trigger).hasClass('btn')) {
             $(trigger).button('loading');
         }
         var timeoutId = _.delay(function () {
-            modalProgress.modal('show');
+            progress.modal('show');
         }, 100);
         return $.ajax({
             type: method,
@@ -48,7 +48,7 @@ importExcelController = function () {
             alert('danger', 'Something went wrong. Error: ' + errorThrown + '.', !_.isEmpty(errorText));
         }).complete(function (jqXHR, textStatus) {
             clearTimeout(timeoutId);
-            modalProgress.modal('hide');
+            progress.modal('hide');
             $(trigger).button('reset');
         });
     }
@@ -60,7 +60,7 @@ importExcelController = function () {
 
         if (!_.isEmpty(el.val())) {
             var uri = decodeURI('/api/columns/' + el.val());
-            ajaxHelper(uri, 'GET', null).success(function (data) {
+            ajaxHelper(uri, 'GET', null, modalProgress).success(function (data) {
                 $.each(data, function (i, item) {
                     var html = item.name;
                     if (item.key) {
@@ -103,14 +103,77 @@ importExcelController = function () {
         return ret;
     }
 
+    function showPreview(data) {
+        var previewChanges = $(scope).find('#previewChanges');
+
+        previewChanges.html('');
+        $.each(data, function (i, item) {
+            var items = $('<li>').text('New items: ').
+                append($('<a>').attr('href', '#').attr('data-toggle', 'modal').attr('data-target', '#previewItems').
+                attr('data-table', item.name).attr('data-table-type', 'a').append($('<span>').addClass('badge').text(item.addedCount)));
+            $('<li>').text('Modified items: ').
+                append($('<a>').attr('href', '#').attr('data-toggle', 'modal').attr('data-target', '#previewItems').
+                attr('data-table', item.name).attr('data-table-type', 'm').append($('<span>').addClass('badge').text(item.modifiedCount))).
+                appendTo(items);
+            previewChanges.append(item.name).append($('<ul>').append(items));
+        });
+
+        previewChanges.find('a').click(function () {
+            var self = $(this);
+
+            var previewItems = $(scope).find('#previewItems');
+            var table = previewItems.find('.modal-body table');
+            table.html('');
+            var modalTitle = previewItems.find('.modal-title');
+            modalTitle.text('');
+
+            var tablePreviewData = _.where(previewData, { name: self.data('table') })[0];
+            var columns = tablePreviewData.columns;
+            var currentData = [];
+            var oldData = [];
+            if (self.data('table-type') === 'a') {
+                currentData = tablePreviewData.added;
+            } else if (self.data('table-type') === 'm') {
+                currentData = tablePreviewData.modified;
+                oldData = tablePreviewData.original;
+            }
+
+            modalTitle.text(self.data('table'));
+
+            var header = $('<thead>');
+            var headerRow = $('<tr>');
+
+            $.each(columns, function (i, column) {
+                $('<th>').text(column).appendTo(headerRow);
+            });
+            header.append(headerRow);
+            table.append(header);
+
+            var body = $('<tbody>');
+            $.each(currentData, function (i, object) {
+                var newRow = $('<tr>');
+                $.each(object, function (ii, value) {
+                    var modified = _.isEmpty(oldData) ? false : oldData[i][ii] !== value;
+                    $('<td>').text(value).addClass(modified ? 'bg-info' : '').appendTo(newRow);
+                });
+                body.append(newRow);
+            });
+            table.append(body);
+        });
+
+        var previewPanel = $('#previewPanel');
+        previewPanel.fadeIn();
+        $(document).scrollTop(previewPanel.offset().top);
+    }
+
     return {
-        init: function (page) {
+        init: function (selector) {
 
             if (initialized) {
                 return;
             }
 
-            scope = $(page);
+            scope = $(selector);
 
             fileId = $(scope).find('[id$=FileId]').val();
             fileUpload = $(scope).find('#fileUpload');
@@ -168,76 +231,15 @@ importExcelController = function () {
                     var newItem = {
                         header: label.text(),
                         type: el.val(),
-                        field: ddlColumns.val()
+                        property: ddlColumns.val()
                     };
                     postData.push(newItem);
                 });
 
-                ajaxHelper(uri, 'POST', postData, self).success(function (data) {
-                    previewData = data;
+                ajaxHelper(uri, 'POST', postData, self, modalProgress).success(function (data) {
                     if (isPreview) {
-                        var previewChanges = $(scope).find('#previewChanges');
-
-                        previewChanges.html('');
-                        $.each(data, function (i, item) {
-                            var items = $('<li>').text('New items: ').
-                                append($('<a>').attr('href', '#').attr('data-toggle', 'modal').attr('data-target', '#previewItems').
-                                attr('data-table', item.name).attr('data-table-type', 'a').append($('<span>').addClass('badge').text(item.addedCount)));
-                            $('<li>').text('Modified items: ').
-                                append($('<a>').attr('href', '#').attr('data-toggle', 'modal').attr('data-target', '#previewItems').
-                                attr('data-table', item.name).attr('data-table-type', 'm').append($('<span>').addClass('badge').text(item.modifiedCount))).
-                                appendTo(items);
-                            previewChanges.append(item.name).append($('<ul>').append(items));
-                        });
-
-                        previewChanges.find('a').click(function () {
-                            var self = $(this);
-
-                            var previewItems = $(scope).find('#previewItems');
-                            var table = previewItems.find('.modal-body table');
-                            table.html('');
-                            var modalTitle = previewItems.find('.modal-title');
-                            modalTitle.text('');
-
-                            var tablePreviewData = _.where(previewData, { name: self.data('table') })[0];
-                            var columns = tablePreviewData.columns;
-                            var currentData = [];
-                            var oldData = [];
-                            if (self.data('table-type') === 'a') {
-                                currentData = tablePreviewData.added;
-                            } else if (self.data('table-type') === 'm') {
-                                currentData = tablePreviewData.modified;
-                                oldData = tablePreviewData.original;
-                            }
-
-                            modalTitle.text(self.data('table'));
-
-                            var header = $('<thead>');
-                            var headerRow = $('<tr>');
-
-                            $.each(columns, function (i, column) {
-                                $('<th>').text(column).appendTo(headerRow);
-                            });
-                            header.append(headerRow);
-                            table.append(header);
-
-                            var body = $('<tbody>');
-                            $.each(currentData, function (i, object) {
-                                var newRow = $('<tr>');
-                                $.each(object, function (ii, value) {
-                                    var modified = _.isEmpty(oldData) ? false : oldData[i][ii] !== value;
-                                    $('<td>').text(value).addClass(modified ? 'bg-info' : '').appendTo(newRow);
-                                });
-                                body.append(newRow);
-                            });
-                            table.append(body);
-                        });
-
-                        var previewPanel = $('#previewPanel');
-                        previewPanel.fadeIn();
-                        $(document).scrollTop(previewPanel.offset().top);
-                    }
-                    else {
+                        showPreview(data);
+                    } else {
                         fileUpload.find('[type=file]').val('').change();
                         alert('success', 'Data imported succesfully.');
                     }
@@ -251,7 +253,7 @@ importExcelController = function () {
             }).on('shown.bs.popover', function () {
                 $(scope).find('button[id=ignoreChanges]').click(function () {
                     var uri = decodeURI('/api/import/' + fileId);
-                    ajaxHelper(uri, 'DELETE', null, $(this)).success(function () {
+                    ajaxHelper(uri, 'DELETE', null, $(this), modalProgress).success(function () {
                         fileUpload.find('[type=file]').val('').change();
                         alert('info', 'Import cancelled.');
                     });

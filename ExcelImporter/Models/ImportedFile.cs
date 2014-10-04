@@ -10,7 +10,7 @@ namespace ExcelImporter.Models
     {
         [Key]
         public string Id { get; set; }
-        //[Required]
+        [Required]
         public string User { get; set; }
         [Required]
         public string Path { get; set; }

@@ -22,7 +22,7 @@ namespace ExcelImporter.Controllers
     {
         private RegistryContext db = new RegistryContext();
 
-        public async Task<IHttpActionResult> Post(string id, [FromBody]ColumnMapping[] columnMappings, bool preview = false)
+        public async Task<IHttpActionResult> Post(string id, [FromBody]IEnumerable<HeaderPropertyMapping> mappings, bool preview = false)
         {
             var ret = new List<TableImportResult>();
 
@@ -51,7 +51,7 @@ namespace ExcelImporter.Controllers
                     if (!headers.ContainsKey(col))
                         continue;
                     var header = headers[col];
-                    var cm = columnMappings.FirstOrDefault(it => it.Header == header);
+                    var cm = mappings.FirstOrDefault(it => it.Header == header);
                     if (cm == null)
                         continue;
 
@@ -62,7 +62,7 @@ namespace ExcelImporter.Controllers
                         newObj = Activator.CreateInstance(type);
                         objectsInRow.Add(newObj);
                     }
-                    var prop = newObj.GetType().GetProperty(cm.Field);
+                    var prop = newObj.GetType().GetProperty(cm.Property);
                     try
                     {
                         var propType = prop.PropertyType;
@@ -93,7 +93,7 @@ namespace ExcelImporter.Controllers
                     }
                     else
                     {
-                        var copiedProperties = columnMappings.Where(it => headers.Values.Contains(it.Header)).Select(it => it.Field);
+                        var copiedProperties = mappings.Where(it => headers.Values.Contains(it.Header)).Select(it => it.Property);
                         ImportHelper.CopyProperties(obj, foundObj, copiedProperties);
                         changedObjects.Add(foundObj);
                     }
@@ -103,14 +103,14 @@ namespace ExcelImporter.Controllers
                 changedObjects.ForEach(it => db.VerifyChanges(it));
             }
 
-            var tables = columnMappings.Select(it => it.Type).Distinct();
+            var tables = mappings.Select(it => it.Type).Distinct();
             foreach (var table in tables)
             {
                 var type = Type.GetType(table);
                 var columns = (from prop in type.GetProperties()
                                where Attribute.IsDefined(prop, typeof(KeyAttribute)) ||
                                 Attribute.IsDefined(prop, typeof(ForeignKeyAttribute)) ||
-                                columnMappings.Any(cm => cm.Type == table && cm.Field == prop.Name)
+                                mappings.Any(cm => cm.Type == table && cm.Property == prop.Name)
                                select prop.Name).ToList();
 
                 var localObjects = db.Set(type).Local.OfType<object>();
@@ -154,18 +154,18 @@ namespace ExcelImporter.Controllers
 
             if (!preview)
             {
-                foreach (var cm in columnMappings)
+                foreach (var cm in mappings)
                 {
-                    var foundColumnMapping = await db.ColumnMappings.Where(it =>
+                    var foundColumnMapping = await db.HeaderPropertyMapping.Where(it =>
                         string.Compare(cm.Type, it.Type, true) == 0 &&
-                        string.Compare(cm.Field, it.Field, true) == 0).FirstOrDefaultAsync();
+                        string.Compare(cm.Property, it.Property, true) == 0).FirstOrDefaultAsync();
 
                     if (foundColumnMapping == null)
                     {
-                        foundColumnMapping = db.ColumnMappings.Add(new ColumnMapping()
+                        foundColumnMapping = db.HeaderPropertyMapping.Add(new HeaderPropertyMapping()
                         {
                             Type = cm.Type,
-                            Field = cm.Field
+                            Property = cm.Property
                         });
                     }
                     foundColumnMapping.Header = cm.Header;
