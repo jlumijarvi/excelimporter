@@ -9,6 +9,7 @@ using System.Threading;
 using System.IO;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
+using ExcelImporter.Extensions;
 
 namespace ExcelImporter.Models
 {
@@ -101,13 +102,19 @@ namespace ExcelImporter.Models
 
                 var headers = new List<object>();
                 var resolver = new ColumnResolver(tables.Select(it => Type.GetType(it.Type)));
-                for (int col = 0; col < row.PhysicalNumberOfCells; col++)
+                for (int col = 0; col <= row.LastCellNum; col++)
                 {
-                    var pi = resolver.Resolve(row.Cells[col].StringCellValue);
+                    var cell = row.GetCell(col);
+                    if (cell == null)
+                        continue;
+                    var header = row.GetCell(col).GetValueAsString();
+                    if (string.IsNullOrEmpty(header))
+                        continue;
+                    var pi = resolver.Resolve(header);
                     headers.Add(
                         new
                         {
-                            ImportColumn = row.Cells[col].StringCellValue,
+                            ImportColumn = header,
                             Tables = tables.Select(it => new
                             {
                                 Name = it.Name,

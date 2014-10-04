@@ -10,14 +10,16 @@ namespace ExcelImporter.Models
 {
     public static class ImportHelper
     {
-        public static void RepairObject(object obj)
+        public static bool RepairObject(object obj)
         {
             // set missing keys and required attributes
+            bool hasValues = false;
             foreach (var prop in obj.GetType().GetProperties())
             {
+                var val = prop.GetValue(obj);
+                hasValues |= !(val == null || (val is string && ((string)val) == string.Empty));
                 if (Attribute.IsDefined(prop, typeof(KeyAttribute)))
                 {
-                    var val = prop.GetValue(obj);
                     if (val == null)
                     {
                         if (prop.PropertyType == typeof(Guid))
@@ -28,7 +30,6 @@ namespace ExcelImporter.Models
                 }
                 if (Attribute.IsDefined(prop, typeof(RequiredAttribute)))
                 {
-                    var val = prop.GetValue(obj);
                     if (val == null || (val is string && ((string)val) == string.Empty))
                     {
                         val = (prop.PropertyType == typeof(string) ? "-" : Activator.CreateInstance(prop.PropertyType));
@@ -36,6 +37,7 @@ namespace ExcelImporter.Models
                     }
                 }
             }
+            return hasValues;
         }
 
         internal static void SetRelations(DbContext context, IEnumerable<object> newObjects)
@@ -51,8 +53,8 @@ namespace ExcelImporter.Models
 
                     if (((reference == null && oldReference != null)
                         || (oldReference == null && reference != null)
-                        || !KeyValuesMatch(reference, oldReference))
-                        && context.Entry(obj).State == EntityState.Unchanged)
+                        || !KeyValuesMatch(reference, oldReference)) && 
+                        context.Entry(obj).State == EntityState.Unchanged)
                     {
                         context.Entry(obj).State = EntityState.Modified;
                     }

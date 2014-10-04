@@ -18,6 +18,12 @@ namespace ExcelImporter.Models
         public DateTime? BirthDate { get; set; }
         public string Comments { get; set; }
 
+        /// <summary>
+        /// Searches the given db for obj using "secondary" keys. It is assumed obj is of this type.
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public static async Task<object> Find(DbContext db, object obj)
         {
             var person = obj as Person;

@@ -167,8 +167,8 @@ importExcelController = function () {
                     var ddlColumns = el.parent().parent().find('[name$=myDropDownListColumns]');
                     var newItem = {
                         header: label.text(),
-                        table: el.val(),
-                        column: ddlColumns.val()
+                        type: el.val(),
+                        field: ddlColumns.val()
                     };
                     postData.push(newItem);
                 });

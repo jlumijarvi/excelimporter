@@ -34,12 +34,12 @@ namespace ExcelImporter.Extensions
             return foundObj;
         }
 
-        public static async Task VerifyChanges(this DbContext self, object obj)
+        public static void VerifyChanges(this DbContext self, object obj)
         {
-            await Task.Run(() =>
+            var changes = false;
+            var entry = self.Entry(obj);
+            if (entry.State == EntityState.Modified)
             {
-                var changes = false;
-                var entry = self.Entry(obj);
                 foreach (var prop in entry.CurrentValues.PropertyNames)
                 {
                     if (!object.Equals(entry.CurrentValues[prop], entry.OriginalValues[prop]))
@@ -49,9 +49,8 @@ namespace ExcelImporter.Extensions
                     }
                 }
 
-                if (!changes)
-                    entry.State = EntityState.Unchanged;
-            });
+                entry.State = changes ? EntityState.Modified : EntityState.Unchanged;
+            }
         }
     }
 }

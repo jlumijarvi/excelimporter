@@ -32,7 +32,7 @@ namespace ExcelImporter
                 {
                     var signinManager = Context.GetOwinContext().GetUserManager<ApplicationSignInManager>();
                     var manager = Context.GetOwinContext().GetUserManager<ApplicationUserManager>();
-                    signinManager.SignIn(manager.FindByName("developer@foo.com"), true, true);
+                    signinManager.SignIn(manager.FindByName("john@doe.com"), true, true);
                 }
             }
         }

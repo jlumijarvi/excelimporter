@@ -46,7 +46,7 @@ namespace ExcelImporter.Controllers
             {
                 var row = sheet.GetRow(i);
                 var objectsInRow = new List<object>();
-                for (int col = 0; col < row.PhysicalNumberOfCells; col++)
+                for (int col = 0; col <= row.LastCellNum; col++)
                 {
                     if (!headers.ContainsKey(col))
                         continue;
@@ -55,34 +55,36 @@ namespace ExcelImporter.Controllers
                     if (cm == null)
                         continue;
 
-                    var type = Type.GetType(cm.Table);
+                    var type = Type.GetType(cm.Type);
                     var newObj = objectsInRow.FirstOrDefault(it => it.GetType() == type);
                     if (newObj == null)
                     {
                         newObj = Activator.CreateInstance(type);
                         objectsInRow.Add(newObj);
                     }
-                    var prop = newObj.GetType().GetProperty(cm.Column);
+                    var prop = newObj.GetType().GetProperty(cm.Field);
                     try
                     {
                         var propType = prop.PropertyType;
                         if (propType.IsGenericType && propType.GetGenericTypeDefinition() == typeof(Nullable<>))
                             propType = Nullable.GetUnderlyingType(propType);
-                        var strValue = row.Cells[col].GetValueAsString(propType);
-                        var val = TypeDescriptor.GetConverter(propType).ConvertFrom(strValue);
-                        prop.SetValue(newObj, val);
+                        var strValue = row.GetCell(col, MissingCellPolicy.RETURN_NULL_AND_BLANK).GetValueAsString(propType);
+                        if (strValue != null)
+                        {
+                            var val = TypeDescriptor.GetConverter(propType).ConvertFrom(strValue);
+                            prop.SetValue(newObj, val);
+                        }
                     }
                     catch { }
-                }
-                foreach (var obj in objectsInRow)
-                {
-                    ImportHelper.RepairObject(obj);
                 }
 
                 var changedObjects = new List<object>();
 
                 foreach (var obj in objectsInRow)
                 {
+                    if (!ImportHelper.RepairObject(obj))
+                        continue;
+
                     var foundObj = await db.FindObject(obj);
                     if (foundObj == null)
                     {
@@ -91,24 +93,24 @@ namespace ExcelImporter.Controllers
                     }
                     else
                     {
-                        var copiedProperties = columnMappings.Where(it => headers.Values.Contains(it.Header)).Select(it => it.Column);
+                        var copiedProperties = columnMappings.Where(it => headers.Values.Contains(it.Header)).Select(it => it.Field);
                         ImportHelper.CopyProperties(obj, foundObj, copiedProperties);
                         changedObjects.Add(foundObj);
-                        await db.VerifyChanges(foundObj);
                     }
                 }
 
                 ImportHelper.SetRelations(db, changedObjects);
+                changedObjects.ForEach(it => db.VerifyChanges(it));
             }
 
-            var tables = columnMappings.Select(it => it.Table).Distinct();
+            var tables = columnMappings.Select(it => it.Type).Distinct();
             foreach (var table in tables)
             {
                 var type = Type.GetType(table);
                 var columns = (from prop in type.GetProperties()
                                where Attribute.IsDefined(prop, typeof(KeyAttribute)) ||
                                 Attribute.IsDefined(prop, typeof(ForeignKeyAttribute)) ||
-                                columnMappings.Any(cm => cm.Table == table && cm.Column == prop.Name)
+                                columnMappings.Any(cm => cm.Type == table && cm.Field == prop.Name)
                                select prop.Name).ToList();
 
                 var localObjects = db.Set(type).Local.OfType<object>();
@@ -152,6 +154,23 @@ namespace ExcelImporter.Controllers
 
             if (!preview)
             {
+                foreach (var cm in columnMappings)
+                {
+                    var foundColumnMapping = await db.ColumnMappings.Where(it =>
+                        string.Compare(cm.Type, it.Type, true) == 0 &&
+                        string.Compare(cm.Field, it.Field, true) == 0).FirstOrDefaultAsync();
+
+                    if (foundColumnMapping == null)
+                    {
+                        foundColumnMapping = db.ColumnMappings.Add(new ColumnMapping()
+                        {
+                            Type = cm.Type,
+                            Field = cm.Field
+                        });
+                    }
+                    foundColumnMapping.Header = cm.Header;
+                }
+
                 await db.SaveChangesAsync();
             }
 

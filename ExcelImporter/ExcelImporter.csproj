@@ -406,6 +406,7 @@
     <Compile Include="Contact.aspx.designer.cs">
       <DependentUpon>Contact.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Controllers\ColumnMappingsController.cs" />
     <Compile Include="Controllers\ColumnsController.cs" />
     <Compile Include="Controllers\DevicesController.cs" />
     <Compile Include="Controllers\ImportController.cs" />

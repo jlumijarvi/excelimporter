@@ -8,7 +8,7 @@ namespace ExcelImporter.Extensions
 {
     public static class ICellExtensions
     {
-        public static string GetValueAsString(this ICell self, Type expectedType)
+        public static string GetValueAsString(this ICell self, Type expectedType = null)
         {
             var ret = default(string);
 
