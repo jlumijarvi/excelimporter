@@ -15,19 +15,24 @@ namespace ExcelImporter.Controllers
 {
     public class DevicesController : ApiController
     {
-        private RegistryContext db = new RegistryContext();
+        IRegistryRepository _repository;
+
+        public DevicesController(IRegistryRepository repository)
+        {
+            _repository = repository;
+        }
 
         // GET: api/Devices
         public IQueryable<Device> GetDevices()
         {
-            return db.Devices;
+            return _repository.GetDevices();
         }
 
         // GET: api/Devices/5
         [ResponseType(typeof(Device))]
         public async Task<IHttpActionResult> GetDevice(string id)
         {
-            Device device = await db.Devices.FindAsync(id);
+            Device device = await _repository.GetDevice(id);
             if (device == null)
             {
                 return NotFound();
@@ -50,23 +55,8 @@ namespace ExcelImporter.Controllers
                 return BadRequest();
             }
 
-            db.Entry(device).State = EntityState.Modified;
-
-            try
-            {
-                await db.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!DeviceExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            if (!(await _repository.SaveDevice(id, device)))
+                return NotFound();
 
             return StatusCode(HttpStatusCode.NoContent);
         }
@@ -80,22 +70,11 @@ namespace ExcelImporter.Controllers
                 return BadRequest(ModelState);
             }
 
-            db.Devices.Add(device);
+            device = await _repository.AddDevice(device);
 
-            try
+            if (device == null)
             {
-                await db.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                if (DeviceExists(device.Imei))
-                {
-                    return Conflict();
-                }
-                else
-                {
-                    throw;
-                }
+                return Conflict();
             }
 
             return CreatedAtRoute("DefaultApi", new { id = device.Imei }, device);
@@ -105,14 +84,11 @@ namespace ExcelImporter.Controllers
         [ResponseType(typeof(Device))]
         public async Task<IHttpActionResult> DeleteDevice(string id)
         {
-            Device device = await db.Devices.FindAsync(id);
+            Device device = await _repository.DeleteDevice(id);
             if (device == null)
             {
                 return NotFound();
             }
-
-            db.Devices.Remove(device);
-            await db.SaveChangesAsync();
 
             return Ok(device);
         }
@@ -121,14 +97,9 @@ namespace ExcelImporter.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _repository.Dispose();
             }
             base.Dispose(disposing);
-        }
-
-        private bool DeviceExists(string id)
-        {
-            return db.Devices.Count(e => e.Imei == id) > 0;
         }
     }
 }

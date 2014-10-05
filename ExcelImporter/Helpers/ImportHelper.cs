@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ExcelImporter.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Data.Entity;
@@ -63,7 +64,7 @@ namespace ExcelImporter.Helpers
 
                     if (((reference == null && oldReference != null)
                         || (oldReference == null && reference != null)
-                        || !KeyValuesMatch(reference, oldReference)) && 
+                        || !KeyValuesMatch(reference, oldReference)) &&
                         context.Entry(obj).State == EntityState.Unchanged)
                     {
                         context.Entry(obj).State = EntityState.Modified;

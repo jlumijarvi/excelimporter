@@ -541,7 +541,7 @@
     <Compile Include="Helpers\ImportHelper.cs" />
     <Compile Include="Models\Spreadsheet\ExcelSpreadsheet.cs" />
     <Compile Include="Models\Spreadsheet\Spreadsheet.cs" />
-    <Compile Include="Models\Client\TableImportResult.cs" />
+    <Compile Include="Models\Client\ImportResult.cs" />
     <Compile Include="Models\ORM\Person.cs" />
     <Compile Include="Models\ORM\RegistryContext.cs" />
     <Compile Include="Controllers\PeopleController.cs" />

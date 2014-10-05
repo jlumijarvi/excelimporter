@@ -5,7 +5,7 @@ using System.Web;
 
 namespace ExcelImporter.Models
 {
-    public class TableImportResult
+    public class ImportResult
     {
         public string Name { get; set; }
         public IEnumerable<string> Columns { get; set; }
