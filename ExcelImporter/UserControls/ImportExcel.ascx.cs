@@ -35,7 +35,7 @@ namespace ExcelImporter.UserControls
 
                     SelectedFile.Text = postedFile.FileName;
 
-                    var repo = new DeviceRepository();
+                    var repo = new RegistryRepository();
                     FileId.Value = await repo.SaveImportedFile(postedFile);
 
                     headerData = await repo.GetHeaderData(FileId.Value);

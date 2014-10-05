@@ -6,10 +6,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 
-namespace ExcelImporter.Models
+namespace ExcelImporter.Helpers
 {
     public static class ImportHelper
     {
+        /// <summary>
+        /// Tries to repair object so that it can be imported to db.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public static bool RepairObject(object obj)
         {
             // set missing keys and required attributes
@@ -40,6 +45,11 @@ namespace ExcelImporter.Models
             return hasValues;
         }
 
+        /// <summary>
+        /// Sets the relations (ie. navigation properties) between the given objets if there are any.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="newObjects"></param>
         internal static void SetRelations(DbContext context, IEnumerable<object> newObjects)
         {
             foreach (var obj in newObjects)

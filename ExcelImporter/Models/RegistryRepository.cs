@@ -10,11 +10,14 @@ using System.IO;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using ExcelImporter.Extensions;
+using System.Data.Entity.Infrastructure;
 
 namespace ExcelImporter.Models
 {
-    public class DeviceRepository
+    public class RegistryRepository : IRegistryRepository, IDisposable
     {
+        private RegistryContext db = new RegistryContext();
+
         public async Task<IEnumerable<ImportedTable>> GetImportedTables()
         {
             using (var db = new RegistryContext())
@@ -114,11 +117,80 @@ namespace ExcelImporter.Models
                                 FullName = it.Type
                             }),
                             SelectedTable = (pi == null ? string.Empty : pi.DeclaringType.FullName),
-                            Columns = Column.GetColumns(pi == null ? string.Empty : pi.DeclaringType.FullName),
+                            Columns = Property.GetProperties(pi == null ? string.Empty : pi.DeclaringType.FullName),
                             SelectedColumn = (pi == null ? string.Empty : pi.Name)
                         });
                 }
                 return headers;
+            }
+        }
+
+        #region Header property mappings
+        public IQueryable<HeaderPropertyMapping> GetHeaderPropertyMappings()
+        {
+            return db.HeaderPropertyMappings;
+        }
+        public async Task<HeaderPropertyMapping> GetHeaderPropertyMapping(int id)
+        {
+            return await db.HeaderPropertyMappings.FindAsync(id);
+        }
+        public async Task<bool> SaveHeaderPropertyMapping(int id, HeaderPropertyMapping columnMapping)
+        {
+            db.Entry(columnMapping).State = EntityState.Modified;
+
+            try
+            {
+                await db.SaveChangesAsync();
+                return true;
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!HeaderPropertyMappingExists(id))
+                {
+                    return false;
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+        public async Task<HeaderPropertyMapping> AddHeaderPropertyMapping(HeaderPropertyMapping columnMapping)
+        {
+            db.HeaderPropertyMappings.Add(columnMapping);
+            await db.SaveChangesAsync();
+
+            return columnMapping;
+        }
+        public async Task<HeaderPropertyMapping> DeleteHeaderPropertyMapping(int id)
+        {
+            HeaderPropertyMapping columnMapping = await db.HeaderPropertyMappings.FindAsync(id);
+            if (columnMapping == null)
+            {
+                return null;
+            }
+
+            db.HeaderPropertyMappings.Remove(columnMapping);
+            await db.SaveChangesAsync();
+
+            return columnMapping;
+        }
+        private bool HeaderPropertyMappingExists(int id)
+        {
+            return db.HeaderPropertyMappings.Count(e => e.Id == id) > 0;
+        }
+        #endregion
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
             }
         }
     }

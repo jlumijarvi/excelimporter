@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json.Serialization;
+﻿using ExcelImporter.Models;
+using Microsoft.Practices.Unity;
+using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +15,10 @@ namespace ExcelImporter
             // Web API configuration and services
             var jsonformatter = config.Formatters.JsonFormatter;
             jsonformatter.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+
+            var container = new UnityContainer();
+            container.RegisterType<IRegistryRepository, RegistryRepository>(new HierarchicalLifetimeManager());
+            config.DependencyResolver = new UnityResolver(container);
 
             // Web API routes
             config.MapHttpAttributeRoutes();

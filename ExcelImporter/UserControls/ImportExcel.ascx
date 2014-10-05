@@ -3,7 +3,6 @@
 <div id="importExcel">
     <div id="modalProgress" class="modal fade modal-progress" data-backdrop="static" data-keyboard="false">
         <div class="text-center ajax-loader">
-            <%--            <i class="fa fa-spinner fa-3x fa-spin"></i>--%>
         </div>
     </div>
     <div id="alertPane" style="display: none">
@@ -26,8 +25,7 @@
     </div>
     <h3>Step 1. Select file</h3>
     <div class="well">
-        Select an Excel file that will be imported to the database. The data in the first sheet is included. That sheet must have a header row. 
-        Note that a preview is shown before any data is saved.
+        Select an Excel file that will be imported to the database. The data in the first sheet is included. A header row is required. Preview is shown before any data is saved.
     </div>
     <asp:HiddenField ID="FileId" runat="server" />
     <div id="fileUpload" class="form file-upload" role="form">
@@ -43,7 +41,7 @@
         <h3>Step 2. Map columns to database items</h3>
         <div class="well">
             Set which headers correspond to which tables and columns in the database. Columns marked with <strong>[key]</strong> are key columns which
-            require unique values. A random value is used as a key if no key column is mapped. If no table and column is selected for a header, that header will be omitted.
+            require unique values. A random value is used as a key if no key column is mapped. Header is omitted if no table and column is selected for it.
         </div>
         <asp:GridView ID="ColumnMappings" EnableTheming="false" CssClass="table small" AutoGenerateColumns="false" runat="server">
             <Columns>
@@ -83,7 +81,7 @@
         <button id="startPreviewButton" type="button" class="btn btn-primary" data-loading-text="Processing...">Preview</button>
     </asp:Panel>
     <div id="previewPanel" style="display: none">
-        <h3>Step 3. Review and save or ignore changes</h3>
+        <h3>Step 3. Review changes</h3>
         <div class="well">
             Review changes and press save to commit changes to database. Select ignore to reject all the changes.
         </div>

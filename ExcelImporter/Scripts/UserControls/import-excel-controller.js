@@ -62,7 +62,7 @@ ImportExcelController = function () {
         $('<option>').val('').html('').appendTo(ddlColumns); // empty selection
 
         if (!_.isEmpty(el.val())) {
-            var uri = decodeURI('/api/columns/' + el.val());
+            var uri = decodeURI('/api/properties/' + el.val());
             ajaxHelper(uri, 'GET', null, modalProgress).success(function (data) {
                 $.each(data, function (i, item) {
                     var html = item.name;

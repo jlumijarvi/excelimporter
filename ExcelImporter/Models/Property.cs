@@ -7,7 +7,7 @@ using System.Web;
 
 namespace ExcelImporter.Models
 {
-    public class Column
+    public class Property
     {
         public string Name { get; set; }
         public bool Key { get; set; }
@@ -23,17 +23,17 @@ namespace ExcelImporter.Models
             }
         }
 
-        public static IEnumerable<Column> GetColumns(string typeName)
+        public static IEnumerable<Property> GetProperties(string typeName)
         {
             var type = Type.GetType(typeName);
             if (type == null)
                 return null;
 
-            var ret = new List<Column>();
+            var ret = new List<Property>();
 
             foreach (var prop in type.GetProperties().Where(it => !it.GetGetMethod().IsVirtual))
             {
-                ret.Add(new Column()
+                ret.Add(new Property()
                 {
                     Name = prop.Name,
                     Key = Attribute.IsDefined(prop, typeof(KeyAttribute)),

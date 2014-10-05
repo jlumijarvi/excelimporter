@@ -30,6 +30,6 @@ namespace ExcelImporter.Models
 
         public System.Data.Entity.DbSet<ExcelImporter.Models.ImportedFile> ImportedFiles { get; set; }
 
-        public System.Data.Entity.DbSet<ExcelImporter.Models.HeaderPropertyMapping> HeaderPropertyMapping { get; set; }
+        public System.Data.Entity.DbSet<ExcelImporter.Models.HeaderPropertyMapping> HeaderPropertyMappings { get; set; }
     }
 }

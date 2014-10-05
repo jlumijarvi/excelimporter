@@ -11,12 +11,17 @@ using System.Web.Http.Description;
 
 namespace ExcelImporter.Controllers
 {
-    public class ColumnsController : ApiController
+    public class PropertiesController : ApiController
     {
-        [ResponseType(typeof(IEnumerable<Column>))]
+        /// <summary>
+        /// Get properties of the given type
+        /// </summary>
+        /// <param name="id">Type in ORM</param>
+        /// <returns></returns>
+        [ResponseType(typeof(IEnumerable<Property>))]
         public IHttpActionResult Get(string id)
         {
-            var ret = Column.GetColumns(id);
+            var ret = Property.GetProperties(id);
             if (ret == null)
                 return NotFound();
 

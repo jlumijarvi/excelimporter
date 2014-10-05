@@ -1,4 +1,5 @@
 ﻿using ExcelImporter.Extensions;
+using ExcelImporter.Helpers;
 using ExcelImporter.Models;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
@@ -157,13 +158,13 @@ namespace ExcelImporter.Controllers
             {
                 foreach (var cm in mappings)
                 {
-                    var foundColumnMapping = await db.HeaderPropertyMapping.Where(it =>
+                    var foundColumnMapping = await db.HeaderPropertyMappings.Where(it =>
                         string.Compare(cm.Type, it.Type, true) == 0 &&
                         string.Compare(cm.Property, it.Property, true) == 0).FirstOrDefaultAsync();
 
                     if (foundColumnMapping == null)
                     {
-                        foundColumnMapping = db.HeaderPropertyMapping.Add(new HeaderPropertyMapping()
+                        foundColumnMapping = db.HeaderPropertyMappings.Add(new HeaderPropertyMapping()
                         {
                             Type = cm.Type,
                             Property = cm.Property

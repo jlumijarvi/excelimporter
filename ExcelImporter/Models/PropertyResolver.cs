@@ -19,7 +19,7 @@ namespace ExcelImporter.Models
             var mappings = default(List<HeaderPropertyMapping>);
             using (var db = new RegistryContext())
             {
-                mappings = db.HeaderPropertyMapping.ToList();
+                mappings = db.HeaderPropertyMappings.ToList();
             }
 
             foreach (var type in Types)

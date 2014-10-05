@@ -11,6 +11,7 @@ using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Owin;
 using System.Threading;
+using System.Web.Mvc;
 
 namespace ExcelImporter
 {
@@ -22,6 +23,7 @@ namespace ExcelImporter
             GlobalConfiguration.Configure(WebApiConfig.Register);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
+            AreaRegistration.RegisterAllAreas();
         }
 
         void Application_AuthenticateRequest(object sender, EventArgs e)
