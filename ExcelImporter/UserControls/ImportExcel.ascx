@@ -3,7 +3,7 @@
 <div id="importExcel">
     <div id="modalProgress" class="modal fade modal-progress" data-backdrop="static" data-keyboard="false">
         <div class="text-center ajax-loader">
-<%--            <i class="fa fa-spinner fa-3x fa-spin"></i>--%>
+            <%--            <i class="fa fa-spinner fa-3x fa-spin"></i>--%>
         </div>
     </div>
     <div id="alertPane" style="display: none">

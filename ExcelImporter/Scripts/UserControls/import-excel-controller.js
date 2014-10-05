@@ -1,4 +1,5 @@
 ﻿// import-excel-controller.js
+/*global _:false */
 
 var ImportExcelController;
 ImportExcelController = function () {
@@ -195,6 +196,8 @@ ImportExcelController = function () {
                 mappingPanel.fadeIn();
                 $(document).scrollTop(mappingPanel.offset().top);
             }
+
+            $('[id$=DropDownValueSeparator]').tooltip('show');
 
             fileUpload.find('.selector').click(function () {
                 $(this).siblings('[type=file]').click();

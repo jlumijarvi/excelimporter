@@ -24,7 +24,6 @@ namespace ExcelImporter.Models
 
         public static ISpreadsheet Create(string fn)
         {
-            var ret = default(ISpreadsheet);
             switch (Path.GetExtension(fn).ToLower())
             {
                 case ".xls":
