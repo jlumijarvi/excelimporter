@@ -25,11 +25,7 @@ namespace ExcelImporter.Models
 
         public bool IsValidFile(HttpPostedFile postedFile)
         {
-            var ext = Path.GetExtension(postedFile.FileName);
-            if (ext != ".xls" && ext != ".xlsx")
-                return false;
-
-            return true;
+            return Spreadsheet.IsSupported(postedFile.FileName);
         }
 
         public async Task<string> SaveImportedFile(HttpPostedFile postedFile)
@@ -39,11 +35,12 @@ namespace ExcelImporter.Models
 
             using (var db = new RegistryContext())
             {
+                var ext = Path.GetExtension(postedFile.FileName);
                 var uploadPath = HttpContext.Current.Server.MapPath("~/uploads");
                 var fileId = Guid.NewGuid().ToString("N").ToString();
                 if (!Directory.Exists(uploadPath))
                     Directory.CreateDirectory(uploadPath);
-                var fn = Path.Combine(uploadPath, fileId);
+                var fn = Path.Combine(uploadPath, fileId + ext);
 
                 using (var file = File.Create(fn))
                 {
@@ -89,34 +86,23 @@ namespace ExcelImporter.Models
                 if (file == null)
                     return null;
 
-                HSSFWorkbook hssfwb;
-                using (var fs = new FileStream(file.Path, FileMode.Open))
+                var headerCells = default(IEnumerable<string>);
+                using (var spreadsheet = Spreadsheet.Create(file.Path))
                 {
-                    try
-                    {
-                        hssfwb = new HSSFWorkbook(fs);
-                    }
-                    catch (Exception e)
-                    {
-                        throw new FormatException(id, e);
-                    }
+                    headerCells = (await spreadsheet.GetHeaderRow()).Where(it => it != null);
                 }
-
-                ISheet sheet = hssfwb.GetSheetAt(0);
-                IRow row = sheet.GetRow(0);
 
                 var tables = await this.GetImportedTables();
 
                 var headers = new List<object>();
                 var resolver = new PropertyResolver(tables.Select(it => Type.GetType(it.Type)));
-                for (int col = 0; col <= row.LastCellNum; col++)
+
+                for (int col = 0; col < headerCells.Count(); col++)
                 {
-                    var cell = row.GetCell(col);
-                    if (cell == null)
-                        continue;
-                    var header = row.GetCell(col).GetValueAsString();
+                    var header = headerCells.ElementAt(col);
                     if (string.IsNullOrEmpty(header))
                         continue;
+
                     var pi = resolver.Resolve(header);
                     headers.Add(
                         new
@@ -132,7 +118,6 @@ namespace ExcelImporter.Models
                             SelectedColumn = (pi == null ? string.Empty : pi.Name)
                         });
                 }
-
                 return headers;
             }
         }

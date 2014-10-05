@@ -1,5 +1,6 @@
 ﻿// import-excel-controller.js
 
+var ImportExcelController;
 ImportExcelController = function () {
     'use strict';
 
@@ -28,6 +29,7 @@ ImportExcelController = function () {
         var timeoutId = _.delay(function () {
             progress.modal('show');
         }, 100);
+
         return $.ajax({
             type: method,
             url: uri,
@@ -46,7 +48,7 @@ ImportExcelController = function () {
                 alertDetails.find('.modal-body pre').append(errorText);
             }
             alert('danger', 'Something went wrong. Error: ' + errorThrown + '.', !_.isEmpty(errorText));
-        }).complete(function (jqXHR, textStatus) {
+        }).complete(function () {
             clearTimeout(timeoutId);
             progress.modal('hide');
             $(trigger).button('reset');
@@ -91,23 +93,25 @@ ImportExcelController = function () {
         }
         var ret = '';
         for (var key in jsonObj) {
-            var val = jsonObj[key];
-            if (_.isObject(val)) {
-                ret += parseWebApiError(val);
-            }
-            else {
-                ret += key + ': ' + val + '\n';
+            if (jsonObj.hasOwnProperty(key)) {
+                var val = jsonObj[key];
+                if (_.isObject(val)) {
+                    ret += parseWebApiError(val);
+                }
+                else {
+                    ret += key + ': ' + val + '\n';
+                }
             }
         }
 
         return ret;
     }
 
-    function showPreview(data) {
+    function showPreview() {
         var previewChanges = $(scope).find('#previewChanges');
 
         previewChanges.html('');
-        $.each(data, function (i, item) {
+        $.each(previewData, function (i, item) {
             var items = $('<li>').text('New items: ').
                 append($('<a>').attr('href', '#').attr('data-toggle', 'modal').attr('data-target', '#previewItems').
                 attr('data-table', item.name).attr('data-table-type', 'a').append($('<span>').addClass('badge').text(item.addedCount)));
@@ -177,7 +181,7 @@ ImportExcelController = function () {
 
             fileId = $(scope).find('[id$=FileId]').val();
             fileUpload = $(scope).find('#fileUpload');
-            alertPanel = $(scope).find('#alertPane')
+            alertPanel = $(scope).find('#alertPane');
             alertDetails = $(scope).find('#alertDetails');
             mappingPanel = $(scope).find('[id$=MappingPanel]');
             previewPanel = $(scope).find('#previewPanel');
@@ -237,6 +241,7 @@ ImportExcelController = function () {
                 });
 
                 ajaxHelper(uri, 'POST', postData, self, modalProgress).success(function (data) {
+                    previewData = data;
                     if (isPreview) {
                         showPreview(data);
                     } else {
@@ -258,6 +263,12 @@ ImportExcelController = function () {
                         alert('info', 'Import cancelled.');
                     });
                 });
+            });
+
+            modalProgress.on('show.bs.modal', function () {
+                document.body.style.cursor = 'progress';
+            }).on('hide.bs.modal', function () {
+                document.body.style.cursor = 'auto';
             });
         }
     };

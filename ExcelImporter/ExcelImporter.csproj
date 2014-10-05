@@ -52,6 +52,12 @@
     <Reference Include="ICSharpCode.SharpZipLib">
       <HintPath>..\packages\NPOI.2.0.6\lib\net40\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
+    <Reference Include="Kent.Boogaart.HelperTrinity">
+      <HintPath>..\packages\Kent.Boogaart.HelperTrinity.2.0.1\lib\portable-win8+net403+sl40+wp+xbox40\Kent.Boogaart.HelperTrinity.dll</HintPath>
+    </Reference>
+    <Reference Include="Kent.Boogaart.KBCsv">
+      <HintPath>..\packages\Kent.Boogaart.KBCsv.3.0.0\lib\portable-win+net45+wp8\Kent.Boogaart.KBCsv.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Owin, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -438,7 +444,9 @@
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Column.cs" />
+    <Compile Include="Models\CsvSpreadsheet.cs" />
     <Compile Include="Models\HeaderPropertyMapping.cs" />
+    <Compile Include="Models\ISpreadsheet.cs" />
     <Compile Include="Models\PropertyResolver.cs" />
     <Compile Include="Models\Device.cs" />
     <Compile Include="Models\DeviceRepository.cs" />
@@ -446,6 +454,8 @@
     <Compile Include="Models\ImportedFile.cs" />
     <Compile Include="Models\ImportedTable.cs" />
     <Compile Include="Models\ImportHelper.cs" />
+    <Compile Include="Models\ExcelSpreadsheet.cs" />
+    <Compile Include="Models\Spreadsheet.cs" />
     <Compile Include="Models\TableImportResult.cs" />
     <Compile Include="Models\Person.cs" />
     <Compile Include="Models\RegistryContext.cs" />

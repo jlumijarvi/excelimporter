@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -24,83 +25,83 @@ namespace ExcelImporter.Controllers
 
         public async Task<IHttpActionResult> Post(string id, [FromBody]IEnumerable<HeaderPropertyMapping> mappings, bool preview = false)
         {
+            if (Debugger.IsAttached)
+                Thread.Sleep(1000);
+
             var ret = new List<TableImportResult>();
 
-            HSSFWorkbook hssfwb;
             var fn = (await db.ImportedFiles.FirstOrDefaultAsync(it => it.Id == id && it.User == Thread.CurrentPrincipal.Identity.Name.ToLower())).Path;
-            using (var fs = new FileStream(fn, FileMode.Open, FileAccess.Read, FileShare.None, bufferSize: 4096, useAsync: true))
-            {
-                hssfwb = new HSSFWorkbook(fs);
-            }
 
-            ISheet sheet = hssfwb.GetSheetAt(0);
-            IRow headerRow = sheet.GetRow(0);
-
-            var headers = new Dictionary<int, string>();
-            for (int col = 0; col < headerRow.PhysicalNumberOfCells; col++)
+            using (var spreadsheet = Spreadsheet.Create(fn))
             {
-                headers.Add(col, headerRow.Cells[col].StringCellValue);
-            }
+                var headerCells = (await spreadsheet.GetHeaderRow()).Where(it => it != null);
 
-            for (int i = 1; i <= sheet.LastRowNum; i++)
-            {
-                var row = sheet.GetRow(i);
-                var objectsInRow = new List<object>();
-                for (int col = 0; col <= row.LastCellNum; col++)
+                var headers = new Dictionary<int, string>();
+                for (int col = 0; col < headerCells.Count(); col++)
                 {
-                    if (!headers.ContainsKey(col))
-                        continue;
-                    var header = headers[col];
-                    var cm = mappings.FirstOrDefault(it => it.Header == header);
-                    if (cm == null)
-                        continue;
+                    headers.Add(col, headerCells.ElementAt(col));
+                }
 
-                    var type = Type.GetType(cm.Type);
-                    var newObj = objectsInRow.FirstOrDefault(it => it.GetType() == type);
-                    if (newObj == null)
+                var row = await spreadsheet.GetNextRow();
+                for (; row != null; row = await spreadsheet.GetNextRow())
+                {
+                    var objectsInRow = new List<object>();
+                    for (int col = 0; col < row.Count(); col++)
                     {
-                        newObj = Activator.CreateInstance(type);
-                        objectsInRow.Add(newObj);
-                    }
-                    var prop = newObj.GetType().GetProperty(cm.Property);
-                    try
-                    {
-                        var propType = prop.PropertyType;
-                        if (propType.IsGenericType && propType.GetGenericTypeDefinition() == typeof(Nullable<>))
-                            propType = Nullable.GetUnderlyingType(propType);
-                        var strValue = row.GetCell(col, MissingCellPolicy.RETURN_NULL_AND_BLANK).GetValueAsString(propType);
-                        if (strValue != null)
+                        if (!headers.ContainsKey(col))
+                            continue;
+                        var header = headers[col];
+                        var cm = mappings.FirstOrDefault(it => it.Header == header);
+                        if (cm == null)
+                            continue;
+
+                        var type = Type.GetType(cm.Type);
+                        var newObj = objectsInRow.FirstOrDefault(it => it.GetType() == type);
+                        if (newObj == null)
                         {
-                            var val = TypeDescriptor.GetConverter(propType).ConvertFrom(strValue);
-                            prop.SetValue(newObj, val);
+                            newObj = Activator.CreateInstance(type);
+                            objectsInRow.Add(newObj);
+                        }
+                        var prop = newObj.GetType().GetProperty(cm.Property);
+                        try
+                        {
+                            var propType = prop.PropertyType;
+                            if (propType.IsGenericType && propType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                                propType = Nullable.GetUnderlyingType(propType);
+                            var strValue =  spreadsheet.ConvertCell(col, propType);
+                            if (strValue != null)
+                            {
+                                var val = TypeDescriptor.GetConverter(propType).ConvertFrom(strValue);
+                                prop.SetValue(newObj, val);
+                            }
+                        }
+                        catch { }
+                    }
+
+                    var changedObjects = new List<object>();
+
+                    foreach (var obj in objectsInRow)
+                    {
+                        if (!ImportHelper.RepairObject(obj))
+                            continue;
+
+                        var foundObj = await db.FindObject(obj);
+                        if (foundObj == null)
+                        {
+                            db.Set(obj.GetType()).Add(obj);
+                            changedObjects.Add(obj);
+                        }
+                        else
+                        {
+                            var copiedProperties = mappings.Where(it => headers.Values.Contains(it.Header)).Select(it => it.Property);
+                            ImportHelper.CopyProperties(obj, foundObj, copiedProperties);
+                            changedObjects.Add(foundObj);
                         }
                     }
-                    catch { }
+
+                    ImportHelper.SetRelations(db, changedObjects);
+                    changedObjects.ForEach(it => db.VerifyChanges(it));
                 }
-
-                var changedObjects = new List<object>();
-
-                foreach (var obj in objectsInRow)
-                {
-                    if (!ImportHelper.RepairObject(obj))
-                        continue;
-
-                    var foundObj = await db.FindObject(obj);
-                    if (foundObj == null)
-                    {
-                        db.Set(obj.GetType()).Add(obj);
-                        changedObjects.Add(obj);
-                    }
-                    else
-                    {
-                        var copiedProperties = mappings.Where(it => headers.Values.Contains(it.Header)).Select(it => it.Property);
-                        ImportHelper.CopyProperties(obj, foundObj, copiedProperties);
-                        changedObjects.Add(foundObj);
-                    }
-                }
-
-                ImportHelper.SetRelations(db, changedObjects);
-                changedObjects.ForEach(it => db.VerifyChanges(it));
             }
 
             var tables = mappings.Select(it => it.Type).Distinct();
