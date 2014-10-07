@@ -25,7 +25,7 @@ namespace ExcelImporter.Models
         Task<Device> AddDevice(Device device);
         Task<Device> DeleteDevice(string id);
 
-        Task<IEnumerable<ImportResult>> ImportFile(string id, string userName, IEnumerable<HeaderPropertyMapping> mappings, bool preview);
+        Task<IEnumerable<ImportResult>> ImportFile(string id, string userName, IEnumerable<HeaderPropertyMapping> mappings, bool noSave);
         Task<ImportedFile> DeleteFile(string id, string userName);
     }
 }

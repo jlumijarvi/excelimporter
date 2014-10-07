@@ -34,7 +34,7 @@ namespace ExcelImporter.Controllers
             if (Debugger.IsAttached)
                 Thread.Sleep(1000);
 
-            var ret = await _repository.ImportFile(id, Thread.CurrentPrincipal.Identity.Name.ToLower(), mappings, preview);
+            IEnumerable<ImportResult> ret = await _repository.ImportFile(id, Thread.CurrentPrincipal.Identity.Name.ToLower(), mappings, preview);
 
             if (ret == null)
                 return NotFound();

@@ -89,7 +89,7 @@
         </div>
         <button id="commitChanges" type="button" class="btn btn-primary" data-loading-text="Saving...">Save</button>
         <button id="confirmIgnoreChanges" type="button" data-toggle="popover" data-html="true" data-title="Are you sure?" data-popover-content="#ignoreChangesPopover"
-            data-trigger="focus" class="btn btn-default">
+            data-trigger="focus" data-placement="top" class="btn btn-default">
             Ignore</button>
         <div id="ignoreChangesPopover" style="display: none">
             <button id="ignoreChanges" type="button" data-dismiss="popover" class="btn btn-danger">Yes</button>
@@ -109,9 +109,9 @@
             </div>
         </div>
     </div>
-    <script>
-        $(function () {
-            ImportExcelController.init('#importExcel');
-        });
-    </script>
 </div>
+<script>
+    $(function () {
+        ImportExcelController.init('#importExcel');
+    });
+</script>

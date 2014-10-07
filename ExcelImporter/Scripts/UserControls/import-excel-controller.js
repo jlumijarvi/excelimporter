@@ -113,20 +113,36 @@ ImportExcelController = function () {
 
         previewChanges.html('');
         $.each(previewData, function (i, item) {
-            var items = $('<li>').text('New items: ').
-                append($('<a>').attr('href', '#').attr('data-toggle', 'modal').attr('data-target', '#previewItems').
-                attr('data-table', item.name).attr('data-table-type', 'a').append($('<span>').addClass('badge').text(item.addedCount)));
-            $('<li>').text('Modified items: ').
-                append($('<a>').attr('href', '#').attr('data-toggle', 'modal').attr('data-target', '#previewItems').
-                attr('data-table', item.name).attr('data-table-type', 'm').append($('<span>').addClass('badge').text(item.modifiedCount))).
-                appendTo(items);
-            previewChanges.append(item.name).append($('<ul>').append(items));
+            var unsignedList = $('<ul>');
+
+            var newItems = $('<li>').text('New items: ');
+            var newItemsTableLink = $('<a>').attr('href', '#')
+                .attr('data-toggle', 'modal')
+                .attr('data-target', '#previewItems')
+                .attr('data-table', item.name)
+                .attr('data-table-type', 'a');
+            $('<span>').addClass('badge').text(item.addedCount).appendTo(newItemsTableLink);
+            newItemsTableLink.appendTo(newItems);
+            unsignedList.append(newItems);
+
+            var modifiedItems = $('<li>').text('Modified items: ');
+            var modifiedItemsTableLink = $('<a>').attr('href', '#')
+                .attr('data-toggle', 'modal')
+                .attr('data-target', '#previewItems')
+                .attr('data-table', item.name)
+                .attr('data-table-type', 'm');
+            $('<span>').addClass('badge').text(item.modifiedCount).appendTo(modifiedItemsTableLink);
+            modifiedItemsTableLink.appendTo(modifiedItems);
+            unsignedList.append(modifiedItems);
+
+            previewChanges.append(item.name);
+            previewChanges.append(unsignedList);
         });
 
         previewChanges.find('a').click(function () {
             var self = $(this);
 
-            var previewItems = $(scope).find('#previewItems');
+            var previewItems = $('body').find('#previewItems.modal');
             var table = previewItems.find('.modal-body table');
             table.html('');
             var modalTitle = previewItems.find('.modal-title');
@@ -168,7 +184,15 @@ ImportExcelController = function () {
 
         var previewPanel = $('#previewPanel');
         previewPanel.fadeIn();
-        $(document).scrollTop(previewPanel.offset().top);
+        $('.container-wrapper').scrollTop(previewPanel.offset().top);
+    }
+
+    function injectModalsToBody() {
+        var modals = $('#importExcel').find('.modal');
+        $('#importExcel').remove('modal');
+        $.each(modals, function (i, item) {
+            $('body').append(item);
+        });
     }
 
     return {
@@ -189,12 +213,14 @@ ImportExcelController = function () {
             previewDialog = $(scope).find('#previewItems .modal-dialog');
             modalProgress = $(scope).find('#modalProgress');
 
+            injectModalsToBody();
+
             if (_.isEmpty(fileId)) {
                 clearAll();
             }
             else {
                 mappingPanel.fadeIn();
-                $(document).scrollTop(mappingPanel.offset().top);
+                $('.container-wrapper').scrollTop(mappingPanel.offset().top);
             }
 
             $('[id$=DropDownValueSeparator]').tooltip('show');
@@ -249,7 +275,7 @@ ImportExcelController = function () {
                         showPreview(data);
                     } else {
                         fileUpload.find('[type=file]').val('').change();
-                        alert('success', 'Data imported succesfully.');
+                        toastr.success('Data imported succesfully.');
                     }
                 });
             });
@@ -263,13 +289,13 @@ ImportExcelController = function () {
                     var uri = decodeURI('/api/import/' + fileId);
                     ajaxHelper(uri, 'DELETE', null, $(this), modalProgress).success(function () {
                         fileUpload.find('[type=file]').val('').change();
-                        alert('info', 'Import cancelled.');
+                        toastr.info('Import cancelled.');
                     });
                 });
             });
 
             modalProgress.on('show.bs.modal', function () {
-                document.body.style.cursor = 'progress';
+                document.body.style.cursor = 'wait';
             }).on('hide.bs.modal', function () {
                 document.body.style.cursor = 'auto';
             });

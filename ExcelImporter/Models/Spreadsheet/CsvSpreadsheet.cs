@@ -32,7 +32,7 @@ namespace ExcelImporter.Models
             if (record != null)
             {
                 if (record.Count == 1)
-                { // may be semicolon is used as separator
+                { // probably semicolon is used as separator
                     _reader.ValueSeparator = ';';
                     return record[0].Split(';');
                 }
@@ -52,7 +52,7 @@ namespace ExcelImporter.Models
             if (record != null)
             {
                 if (record.Count == 1)
-                { // may be semicolon is used as separator
+                { // probably semicolon is used as separator
                     _reader.ValueSeparator = ';';
                     _current = record[0].Split(';');
                 }

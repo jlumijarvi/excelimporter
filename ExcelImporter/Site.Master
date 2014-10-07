@@ -14,6 +14,7 @@
     <%--    <webopt:bundlereference runat="server" path="~/Content/css" />--%>
     <link href="Content/bootstrap.min.css" rel="stylesheet" />
     <link href="Content/font-awesome.min.css" rel="stylesheet" />
+    <link href="Content/toastr.min.css" rel="stylesheet" />
     <link href="Content/Site.css" rel="stylesheet" />
     <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />
 
@@ -40,6 +41,7 @@
                 <asp:ScriptReference Name="WebFormsBundle" />
                 <%--Site Scripts--%>
                 <asp:ScriptReference Name="underscore" />
+                <asp:ScriptReference Name="toastr" />
                 <asp:ScriptReference Path="~/bundles/UserControlsJs" />
             </Scripts>
         </asp:ScriptManager>
@@ -79,9 +81,11 @@
                 </div>
             </div>
         </div>
-        <div class="container body-content">
-            <asp:ContentPlaceHolder ID="MainContent" runat="server">
-            </asp:ContentPlaceHolder>
+        <div class="container-wrapper">
+            <div class="container body-content bottom-buffer">
+                <asp:ContentPlaceHolder ID="MainContent" runat="server">
+                </asp:ContentPlaceHolder>
+            </div>
         </div>
         <div class="navbar navbar-default navbar-fixed-bottom">
             <div class="container">
@@ -93,5 +97,16 @@
             </div>
         </div>
     </form>
+    <script>
+        $(function () {
+            $('body').css('overflow', 'hidden');
+            var topNavbarHeight = $('.navbar-fixed-top').outerHeight();
+            var bottomNavbarHeight = $('.navbar-fixed-bottom').outerHeight();
+            $('body').css('padding-top', topNavbarHeight);
+            $('body').css('padding-bottom', bottomNavbarHeight);
+            $('.container-wrapper').css('top', topNavbarHeight);
+            $('.container-wrapper').css('bottom', bottomNavbarHeight);
+        });
+    </script>
 </body>
 </html>

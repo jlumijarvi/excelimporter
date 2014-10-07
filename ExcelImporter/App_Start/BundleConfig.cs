@@ -57,6 +57,14 @@ namespace ExcelImporter
                     DebugPath = "~/Scripts/underscore.js",
                 });
 
+            ScriptManager.ScriptResourceMapping.AddDefinition(
+                "toastr",
+                new ScriptResourceDefinition
+                {
+                    Path = "~/Scripts/toastr.min.js",
+                    DebugPath = "~/Scripts/toastr.js",
+                });
+
             if (System.Diagnostics.Debugger.IsAttached)
             {
                 BundleTable.Bundles.ToList().ForEach(it =>

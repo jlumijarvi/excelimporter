@@ -53,10 +53,21 @@ input[type="select"] {
     margin-top: 10px;
 }
 
+.bottom-buffer {
+    margin-bottom: 10px;
+}
+
 .ajax-loader {
     margin-top: 20%;
 }
 
 .scrollbars {
+    overflow: auto;
+}
+
+.container-wrapper {
+    position: fixed;
+    left: 0;
+    right: 0;
     overflow: auto;
 }
